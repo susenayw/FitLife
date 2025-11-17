@@ -1,0 +1,308 @@
+// lib/screens/personal_info_screen.dart
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../widgets/custom_button.dart';
+import '../models/user_data.dart';
+import '../providers/user_provider.dart';
+import 'complete_profile_screen.dart'; // Import CompleteProfileScreen
+
+class PersonalInfoScreen extends StatefulWidget {
+  const PersonalInfoScreen({super.key});
+
+  @override
+  State<PersonalInfoScreen> createState() => _PersonalInfoScreenState();
+}
+
+class _PersonalInfoScreenState extends State<PersonalInfoScreen> {
+  final TextEditingController _usernameController = TextEditingController();
+  final TextEditingController _weightController = TextEditingController();
+  final TextEditingController _heightController = TextEditingController();
+
+  String? _selectedGender;
+  DateTime? _selectedDateOfBirth;
+
+  final List<String> _genderOptions = ['Male', 'Female'];
+
+  InputDecoration _inputDecoration(String hintText, {Widget? suffixIcon}) {
+    return InputDecoration(
+      hintText: hintText,
+      hintStyle: const TextStyle(color: Colors.white54),
+      filled: true,
+      fillColor: Colors.black.withOpacity(0.4),
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(10),
+        borderSide: BorderSide.none,
+      ),
+      contentPadding: const EdgeInsets.symmetric(vertical: 15.0, horizontal: 15.0),
+      suffixIcon: suffixIcon,
+    );
+  }
+
+  Future<void> _selectDate(BuildContext context) async {
+    final DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: DateTime.now().subtract(const Duration(days: 365 * 18)),
+      firstDate: DateTime(1900),
+      lastDate: DateTime.now(),
+      builder: (context, child) {
+        return Theme(
+          data: ThemeData.dark().copyWith(
+            colorScheme: ColorScheme.dark(
+              primary: const Color(0xFFE50000),
+              onPrimary: Colors.white,
+              surface: Colors.black87,
+              onSurface: Colors.white,
+            ),
+            dialogBackgroundColor: Colors.black87,
+          ),
+          child: child!,
+        );
+      },
+    );
+    if (picked != null && picked != _selectedDateOfBirth) {
+      setState(() {
+        _selectedDateOfBirth = picked;
+      });
+    }
+  }
+
+  void _onNextPressed() {
+    // 1. Validasi dan Parsing Input
+    final username = _usernameController.text;
+    final weight = double.tryParse(_weightController.text);
+    final height = double.tryParse(_heightController.text);
+
+    if (username.isEmpty || weight == null || height == null || weight <= 0 || height <= 0 || _selectedGender == null || _selectedDateOfBirth == null)
+    {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Harap lengkapi semua data personal dengan benar (Weight & Height harus > 0).')),
+      );
+      return;
+    }
+
+    // 2. Simpan Data ke Provider
+    final userData = UserData(
+      username: username,
+      weight: weight,
+      height: height,
+      gender: _selectedGender!,
+      dateOfBirth: _selectedDateOfBirth!,
+    );
+
+    Provider.of<UserProvider>(context, listen: false).setUserData(userData);
+
+    // 3. Navigasi ke CompleteProfileScreen
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => const CompleteProfileScreen()),
+    );
+  }
+
+  @override
+  void dispose() {
+    _usernameController.dispose();
+    _weightController.dispose();
+    _heightController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: Stack(
+        children: [
+          // Background Image (gym_room.png)
+          Positioned.fill(
+            child: Image.asset(
+              'assets/images/gym_room.png',
+              fit: BoxFit.cover,
+              colorBlendMode: BlendMode.darken,
+              color: Colors.black.withOpacity(0.5),
+              errorBuilder: (context, error, stackTrace) {
+                return Container(color: const Color(0xFF640A0A));
+              },
+            ),
+          ),
+
+          // Konten Utama
+          SafeArea(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(30.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const SizedBox(height: 10),
+                  // Judul/Logo
+                  const Text(
+                    'FitLife',
+                    style: TextStyle(
+                      fontSize: 48,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
+                  ),
+                  const SizedBox(height: 40),
+
+                  // 1. USERNAME
+                  const Text('Username', style: TextStyle(color: Colors.white, fontSize: 18)),
+                  const SizedBox(height: 8),
+                  TextField(
+                    controller: _usernameController,
+                    keyboardType: TextInputType.text,
+                    style: const TextStyle(color: Colors.white),
+                    decoration: _inputDecoration('John Doe'),
+                  ),
+                  const SizedBox(height: 25),
+
+                  // 2. WEIGHT & GENDER (Row)
+                  Row(
+                    children: [
+                      // WEIGHT
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text('Weight', style: TextStyle(color: Colors.white, fontSize: 18)),
+                            const SizedBox(height: 8),
+                            TextField(
+                              controller: _weightController,
+                              keyboardType: TextInputType.number,
+                              style: const TextStyle(color: Colors.white),
+                              decoration: _inputDecoration('Kg'),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 20),
+                      // GENDER
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text('Gender', style: TextStyle(color: Colors.white, fontSize: 18)),
+                            const SizedBox(height: 8),
+                            DropdownButtonFormField<String>(
+                              value: _selectedGender,
+                              items: _genderOptions.map((String value) {
+                                return DropdownMenuItem<String>(
+                                  value: value,
+                                  child: Text(value, style: const TextStyle(color: Colors.white)),
+                                );
+                              }).toList(),
+                              onChanged: (String? newValue) {
+                                setState(() {
+                                  _selectedGender = newValue;
+                                });
+                              },
+                              decoration: _inputDecoration('Male/Female').copyWith(
+                                fillColor: Colors.black.withOpacity(0.4),
+                              ),
+                              dropdownColor: Colors.black87,
+                              icon: const Icon(Icons.arrow_drop_down, color: Colors.white70),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 25),
+
+                  // 3. HEIGHT & DATE OF BIRTH (Row)
+                  Row(
+                    children: [
+                      // HEIGHT
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text('Height', style: TextStyle(color: Colors.white, fontSize: 18)),
+                            const SizedBox(height: 8),
+                            TextField(
+                              controller: _heightController,
+                              keyboardType: TextInputType.number,
+                              style: const TextStyle(color: Colors.white),
+                              decoration: _inputDecoration('cm'),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 20),
+                      // DATE OF BIRTH
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text('Date of Birth', style: TextStyle(color: Colors.white, fontSize: 18)),
+                            const SizedBox(height: 8),
+                            GestureDetector(
+                              onTap: () => _selectDate(context),
+                              child: InputDecorator(
+                                decoration: _inputDecoration('Date of Birth').copyWith(
+                                  fillColor: Colors.black.withOpacity(0.4),
+                                  suffixIcon: const Icon(Icons.calendar_today, color: Colors.white70),
+                                ),
+                                child: Text(
+                                  _selectedDateOfBirth == null
+                                      ? 'YYYY-MM-DD'
+                                      : '${_selectedDateOfBirth!.year}-${_selectedDateOfBirth!.month.toString().padLeft(2, '0')}-${_selectedDateOfBirth!.day.toString().padLeft(2, '0')}',
+                                  style: TextStyle(
+                                    color: _selectedDateOfBirth == null ? Colors.white54 : Colors.white,
+                                    fontSize: 15.0,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 50),
+
+                  // Tombol Next
+                  CustomButton(
+                    text: 'Next',
+                    onPressed: _onNextPressed,
+                    backgroundColor: Colors.black.withOpacity(0.9),
+                    textColor: Colors.white,
+                  ),
+                  const SizedBox(height: 16),
+
+                  // Tombol Back
+                  Center(
+                    child: TextButton(
+                      onPressed: () {
+                        Navigator.pop(context);
+                      },
+                      child: const Text(
+                        'Back',
+                        style: TextStyle(color: Colors.white70, fontSize: 16),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 50),
+                ],
+              ),
+            ),
+          ),
+
+          // Footer
+          const Positioned(
+            left: 0,
+            right: 0,
+            bottom: 20,
+            child: Center(
+              child: Text(
+                '© 2025 Kapal Lawd Cabang',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Colors.white54,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
