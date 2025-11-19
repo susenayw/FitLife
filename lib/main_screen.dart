@@ -1,8 +1,9 @@
 // lib/main_screen.dart
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:intl/intl.dart'; // Untuk memformat tanggal
-import 'dart:io'; // Untuk FileImage
+import 'package:intl/intl.dart';
+import 'dart:io';
+import 'dart:ui'; // Diperlukan untuk ImageFilter
 
 import 'providers/user_provider.dart';
 
@@ -28,8 +29,6 @@ class _MainScreenState extends State<MainScreen> {
   void _onItemTapped(int index) {
     setState(() {
       _selectedIndex = index;
-      // Di dunia nyata, index 2 (Activity) mungkin membuka Bottom Sheet atau Modal,
-      // tetapi untuk saat ini kita hanya mengganti halaman.
     });
   }
 
@@ -86,16 +85,109 @@ class _MainScreenState extends State<MainScreen> {
 }
 
 // --- DASHBOARD BODY WIDGET ---
-class DashboardPage extends StatelessWidget {
+class DashboardPage extends StatefulWidget { // <-- DIUBAH KE STATEFUL
   const DashboardPage({super.key});
+
+  @override
+  State<DashboardPage> createState() => _DashboardPageState();
+}
+
+class _DashboardPageState extends State<DashboardPage> {
+  // Controller untuk input kalori (untuk dialog)
+  final TextEditingController _calorieController = TextEditingController();
+  int _dailyCalorieIntake = 0; // State mock untuk kalori yang dicatat
+
+  @override
+  void dispose() {
+    _calorieController.dispose();
+    super.dispose();
+  }
+
+  void _showCalorieInputDialog() {
+    _calorieController.clear();
+
+    showDialog(
+      context: context,
+      builder: (BuildContext dialogContext) {
+        return Theme(
+          data: ThemeData.dark(),
+          child: AlertDialog(
+            backgroundColor: const Color(0xFF640A0A),
+            contentPadding: const EdgeInsets.only(top: 10.0),
+            title: const Text(
+              'Add Daily Calorie Intake',
+              style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold),
+            ),
+            content: SingleChildScrollView(
+              child: ListBody(
+                children: <Widget>[
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 8.0),
+                    child: TextField(
+                      controller: _calorieController,
+                      keyboardType: TextInputType.number,
+                      style: const TextStyle(color: Colors.white, fontSize: 18),
+                      autofocus: true,
+                      decoration: InputDecoration(
+                        hintText: 'Enter Kcal',
+                        hintStyle: const TextStyle(color: Colors.white54),
+                        filled: true,
+                        fillColor: const Color(0x80000000), // Black with 50% opacity
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(10),
+                          borderSide: BorderSide.none,
+                        ),
+                        suffixText: 'Kcal',
+                        suffixStyle: const TextStyle(color: Colors.white70),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            actions: <Widget>[
+              TextButton(
+                child: const Text('Cancel', style: TextStyle(color: Colors.white54)),
+                onPressed: () {
+                  Navigator.of(dialogContext).pop();
+                },
+              ),
+              ElevatedButton(
+                onPressed: () {
+                  final int? calories = int.tryParse(_calorieController.text);
+                  if (calories != null && calories > 0) {
+                    setState(() {
+                      _dailyCalorieIntake = calories; // Update state lokal
+                    });
+                    // TODO: Simpan ke Provider/Database di sini
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('Calorie intake of $calories Kcal saved!')),
+                    );
+                    Navigator.of(dialogContext).pop();
+                  } else {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Input kalori tidak valid.')),
+                    );
+                  }
+                },
+                child: const Text('Save', style: TextStyle(color: Colors.black)),
+                style: ElevatedButton.styleFrom(backgroundColor: Colors.white),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
     final userProvider = Provider.of<UserProvider>(context);
     final userData = userProvider.currentUser;
     final bmiCategory = userProvider.getBMICategory();
-    // Format tanggal: Contoh: Sunday, Jun 8th (perlu package intl)
-    final today = DateFormat('EEEE, MMM dth').format(DateTime.now());
+
+    // PERBAIKAN FORMAT TANGGAL: Hapus 'th' untuk kompatibilitas Intl
+    final today = DateFormat('EEEE, MMM d').format(DateTime.now());
 
     // --- Ambil Profile Picture ---
     File? profileImageFile;
@@ -114,7 +206,7 @@ class DashboardPage extends StatelessWidget {
       bmiColor = Colors.greenAccent;
     } else if (bmiCategory.contains('Overweight')) {
       bmiColor = Colors.orangeAccent;
-    } else { // Obese
+    } else {
       bmiColor = Colors.redAccent;
     }
 
@@ -143,7 +235,7 @@ class DashboardPage extends StatelessWidget {
                         backgroundColor: Colors.white12,
                         backgroundImage: profileImageFile != null ? FileImage(profileImageFile) : null,
                         child: profileImageFile == null
-                            ? const Icon(Icons.person, color: Colors.white70, size: 30) // Placeholder
+                            ? const Icon(Icons.person, color: Colors.white70, size: 30)
                             : null,
                       ),
                       const SizedBox(width: 15),
@@ -157,17 +249,17 @@ class DashboardPage extends StatelessWidget {
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
                                 Text(
-                                  today, // e.g., Sunday, Jun 8th
+                                  today,
                                   style: const TextStyle(color: Colors.white, fontSize: 16),
                                 ),
                                 const Icon(Icons.calendar_today, color: Colors.white, size: 16),
                               ],
                             ),
                             const SizedBox(height: 5),
-                            // Calorie (Placeholder)
-                            const Text(
-                              '- Kcal',
-                              style: TextStyle(color: Colors.white, fontSize: 32, fontWeight: FontWeight.bold),
+                            // Calorie (Menampilkan State yang dicatat)
+                            Text(
+                              '${_dailyCalorieIntake == 0 ? '-' : _dailyCalorieIntake} Kcal',
+                              style: const TextStyle(color: Colors.white, fontSize: 32, fontWeight: FontWeight.bold),
                             ),
                           ],
                         ),
@@ -192,7 +284,7 @@ class DashboardPage extends StatelessWidget {
 
                       // Add Calories Button
                       ElevatedButton.icon(
-                        onPressed: () {},
+                        onPressed: _showCalorieInputDialog, // <-- Panggil dialog
                         icon: const Icon(Icons.add, color: Colors.black),
                         label: const Text('Add your Calories', style: TextStyle(color: Colors.black)),
                         style: ElevatedButton.styleFrom(
@@ -210,35 +302,26 @@ class DashboardPage extends StatelessWidget {
             const SizedBox(height: 30),
 
             // --- MY PLAN SECTION ---
-            const Text(
-              'My Plan',
-              style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold),
-            ),
+            const Text('My Plan', style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold)),
             const SizedBox(height: 15),
             Container(
               width: double.infinity,
               padding: const EdgeInsets.all(20.0),
               decoration: BoxDecoration(
-                color: Colors.black.withOpacity(0.8),
+                color: const Color(0xCC000000),
                 borderRadius: BorderRadius.circular(15),
               ),
               child: Column(
                 children: [
-                  const Text(
-                    'Currently no plan',
-                    style: TextStyle(color: Colors.white54, fontSize: 16),
-                  ),
+                  const Text('Currently no plan', style: TextStyle(color: Colors.white54, fontSize: 16)),
                   const SizedBox(height: 15),
-                  // Add your plan button
                   ElevatedButton.icon(
                     onPressed: () {},
                     icon: const Icon(Icons.add, color: Color(0xFFE50000)),
                     label: const Text('Add your plan', style: TextStyle(color: Color(0xFFE50000), fontSize: 18)),
                     style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.white,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10),
-                        ),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                         padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 15)
                     ),
                   ),
@@ -248,27 +331,21 @@ class DashboardPage extends StatelessWidget {
             const SizedBox(height: 30),
 
             // --- RECENT ACTIVITY SECTION ---
-            const Text(
-              'Recent Activity',
-              style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold),
-            ),
+            const Text('Recent Activity', style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold)),
             const SizedBox(height: 15),
             Container(
               width: double.infinity,
               height: 150,
               padding: const EdgeInsets.all(20.0),
               decoration: BoxDecoration(
-                color: Colors.black.withOpacity(0.8),
+                color: const Color(0xCC000000),
                 borderRadius: BorderRadius.circular(15),
               ),
               child: const Center(
-                child: Text(
-                  'No Activity',
-                  style: TextStyle(color: Colors.white54, fontSize: 16),
-                ),
+                child: Text('No Activity', style: TextStyle(color: Colors.white54, fontSize: 16)),
               ),
             ),
-            const SizedBox(height: 20), // Padding bawah sebelum navbar
+            const SizedBox(height: 20),
           ],
         ),
       ),
