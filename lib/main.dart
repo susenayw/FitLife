@@ -1,12 +1,13 @@
-// lib/main.dart
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
-import 'screens/home_auth_screen.dart';
-import 'providers/user_provider.dart';
+// Import Screens dan Providers menggunakan path package:
+import 'package:fitlifeapp/screens/home_auth_screen.dart';
+import 'package:fitlifeapp/providers/user_provider.dart';
 
 void main() {
+  // PENTING: Memastikan widget binding diinisialisasi
   WidgetsFlutterBinding.ensureInitialized();
 
   SystemChrome.setEnabledSystemUIMode(
@@ -15,13 +16,15 @@ void main() {
   );
 
   runApp(
+    // Menginisialisasi Provider di tingkat tertinggi
     ChangeNotifierProvider(
       create: (context) => UserProvider(),
-      child: const FitLifeApp(),
+      child: const FitLifeApp(), // <-- Kelas ini yang dicari oleh widget_test.dart
     ),
   );
 }
 
+// DEFINISI KELAS UTAMA APLIKASI
 class FitLifeApp extends StatelessWidget {
   const FitLifeApp({super.key});
 

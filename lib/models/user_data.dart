@@ -1,12 +1,13 @@
 // lib/models/user_data.dart
 
 class UserData {
-  String username;
-  double weight; // dalam kg
-  double height; // dalam cm
-  String gender;
-  DateTime dateOfBirth;
+  final String username;
+  final double weight; // dalam kg
+  final double height; // dalam cm
+  final String gender;
+  final DateTime dateOfBirth;
   String? bio; // Bio adalah opsional
+  String? profilePicturePath; // <-- BARU: Untuk menyimpan path gambar profil
 
   UserData({
     this.username = '',
@@ -15,6 +16,7 @@ class UserData {
     this.gender = 'Male',
     required this.dateOfBirth,
     this.bio,
+    this.profilePicturePath, // <-- BARU
   });
 
   // Metode pembantu untuk mendapatkan usia
@@ -26,5 +28,26 @@ class UserData {
       age--;
     }
     return age;
+  }
+
+  // Metode copyWith untuk State Management yang efisien
+  UserData copyWith({
+    String? username,
+    double? weight,
+    double? height,
+    String? gender,
+    DateTime? dateOfBirth,
+    String? bio,
+    String? profilePicturePath, // <-- BARU
+  }) {
+    return UserData(
+      username: username ?? this.username,
+      weight: weight ?? this.weight,
+      height: height ?? this.height,
+      gender: gender ?? this.gender,
+      dateOfBirth: dateOfBirth ?? this.dateOfBirth,
+      bio: bio ?? this.bio,
+      profilePicturePath: profilePicturePath ?? this.profilePicturePath, // <-- BARU
+    );
   }
 }

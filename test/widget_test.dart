@@ -1,23 +1,26 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-// Pastikan import ini benar-benar mengarah ke file main.dart
+// PERBAIKAN: Import menggunakan path package:
 import 'package:fitlifeapp/main.dart';
 
 void main() {
-  testWidgets('Aplikasi FitLife dapat dimuat dan menampilkan teks HomeAuthScreen', (WidgetTester tester) async {
-    // 1. Membangun aplikasi kita dan memicu frame
+  testWidgets('Verifikasi halaman awal FitLife dimuat dengan benar', (WidgetTester tester) async {
+
+    // Membangun aplikasi kita menggunakan kelas utama FitLifeApp
     await tester.pumpWidget(const FitLifeApp());
 
-    // 2. Verifikasi bahwa teks utama 'FitLife' dari HomeAuthScreen terlihat.
-    // Teks ini seharusnya ada di HomeAuthScreen
+    // Verifikasi bahwa teks utama 'FitLife' terlihat
     expect(find.text('FitLife'), findsOneWidget);
 
-    // 3. Verifikasi bahwa ada dua tombol (Login dan Sign Up)
+    // Verifikasi bahwa tombol Login terlihat (ElevatedButton)
     expect(find.widgetWithText(ElevatedButton, 'Login'), findsOneWidget);
-    expect(find.widgetWithText(ElevatedButton, 'Sign Up'), findsOneWidget);
 
-    // Anda bisa menambahkan tes lain di sini, misalnya memastikan tidak ada widget 'counter'
-    expect(find.byIcon(Icons.add), findsNothing);
+    // Verifikasi bahwa tombol Sign Up terlihat (TextButton/CustomButton - kita cari berdasarkan teks)
+    // Mencari widget apa pun yang mengandung teks 'Sign Up'
+    expect(find.text('Sign Up'), findsOneWidget);
+
+    // Verifikasi bahwa tidak ada widget dari template lama
+    expect(find.text('0'), findsNothing);
   });
 }

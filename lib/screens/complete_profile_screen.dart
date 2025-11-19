@@ -1,9 +1,13 @@
 // lib/screens/complete_profile_screen.dart
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:image_picker/image_picker.dart'; // <-- BARU: Import Image Picker
+import 'dart:io'; // <-- BARU: Untuk File
+
 import '../providers/user_provider.dart';
-import '../main_screen.dart';
+import '../main_screen.dart'; // Hanya sebagai fallback, tidak digunakan langsung
 import '../widgets/custom_button.dart';
+import 'confirmation_screen.dart'; // <-- BARU: Import ConfirmationScreen
 
 class CompleteProfileScreen extends StatefulWidget {
   const CompleteProfileScreen({super.key});
@@ -15,16 +19,35 @@ class CompleteProfileScreen extends StatefulWidget {
 class _CompleteProfileScreenState extends State<CompleteProfileScreen> {
   final TextEditingController _bioController = TextEditingController();
 
+  File? _imageFile; // Menyimpan file gambar
+
+  // --- FUNGSI BARU: Memilih Gambar ---
+  Future<void> _pickImage() async {
+    final pickedFile = await ImagePicker().pickImage(source: ImageSource.gallery);
+    if (pickedFile != null) {
+      setState(() {
+        _imageFile = File(pickedFile.path);
+        // Di sini Anda bisa menyimpan path ke Provider jika diperlukan
+      });
+    }
+  }
+
   void _onConfirmPressed() {
     // 1. Simpan Bio (Update Provider)
     final userProvider = Provider.of<UserProvider>(context, listen: false);
     userProvider.updateBio(_bioController.text);
 
-    // 2. Selesai pendaftaran, navigasi ke Dashboard utama
-    // Menggunakan pushReplacement karena ini adalah langkah terakhir pendaftaran
-    Navigator.pushReplacement(
+    // 2. Simpan Path Gambar (Mock: Di dunia nyata, ini diupload ke server)
+    if (_imageFile != null) {
+      // Contoh: Menyimpan path lokal (atau URL upload) di Provider jika model UserData diperluas
+      // userProvider.updateProfilePicturePath(_imageFile!.path);
+    }
+
+    // 3. Navigasi ke Confirmation Screen
+    // Menggunakan push biasa agar tombol 'Back' dari ConfirmationScreen berfungsi
+    Navigator.push(
       context,
-      MaterialPageRoute(builder: (context) => const MainScreen()),
+      MaterialPageRoute(builder: (context) => const ConfirmationScreen()),
     );
   }
 
@@ -96,19 +119,39 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> {
                       Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          // Kolom Gambar Profil
-                          Container(
-                            width: 90,
-                            height: 90,
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              border: Border.all(color: Colors.white, width: 2),
-                              color: Colors.white10,
-                            ),
-                            child: const Center(
-                              child: Icon(Icons.add_a_photo, color: Colors.white70, size: 30),
+                          // KOLOM GAMBAR PROFIL (Dapat Ditekan)
+                          GestureDetector(
+                            onTap: _pickImage, // <-- Panggil fungsi pick image saat ditekan
+                            child: SizedBox(
+                              width: 90,
+                              height: 90,
+                              child: Stack(
+                                children: [
+                                  CircleAvatar(
+                                    radius: 45,
+                                    backgroundColor: Colors.white10,
+                                    // Menampilkan gambar yang dipilih, atau placeholder
+                                    backgroundImage: _imageFile != null ? FileImage(_imageFile!) : null,
+                                    child: _imageFile == null
+                                        ? const Icon(Icons.person, color: Colors.white70, size: 50)
+                                        : null,
+                                  ),
+                                  // Ikon "Add Image"
+                                  const Positioned(
+                                    bottom: 0,
+                                    right: 0,
+                                    child: CircleAvatar(
+                                      radius: 12,
+                                      backgroundColor: Color(0xFFE50000),
+                                      child: Icon(Icons.add, color: Colors.white, size: 16),
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
                           ),
+                          // END KOLOM GAMBAR PROFIL
+
                           const SizedBox(width: 20),
                           // Kolom Data & BMI
                           Expanded(

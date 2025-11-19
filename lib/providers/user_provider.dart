@@ -8,13 +8,24 @@ class UserProvider with ChangeNotifier {
   UserData? get currentUser => _currentUser;
 
   void setUserData(UserData data) {
+    // Digunakan saat pendaftaran awal (Personal Info Screen)
     _currentUser = data;
     notifyListeners();
   }
 
   void updateBio(String bio) {
     if (_currentUser != null) {
-      _currentUser!.bio = bio;
+      // Menggunakan copyWith untuk menjaga immutability
+      _currentUser = _currentUser!.copyWith(bio: bio);
+      notifyListeners();
+    }
+  }
+
+  // FUNGSI BARU: Update Profile Picture Path
+  void updateProfilePicturePath(String? path) {
+    if (_currentUser != null) {
+      // Menggunakan copyWith untuk menjaga immutability
+      _currentUser = _currentUser!.copyWith(profilePicturePath: path);
       notifyListeners();
     }
   }
@@ -37,7 +48,7 @@ class UserProvider with ChangeNotifier {
     double bmi = calculateBMI();
     if (bmi == 0.0) return "Data Belum Lengkap";
 
-    // Mengacu pada klasifikasi Obese Class I (30.0–34.9) dan lainnya
+    // Klasifikasi BMI sesuai standar
     if (bmi < 18.5) {
       return "Underweight";
     } else if (bmi >= 18.5 && bmi < 25.0) {

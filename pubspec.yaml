@@ -1,6 +1,6 @@
 name: fitlifeapp
 description: "A new Flutter project."
-publish_to: 'none' # Remove this line if you wish to publish to pub.dev
+publish_to: 'none'
 
 version: 1.0.0+1
 
@@ -16,10 +16,13 @@ dependencies:
   # State Management
   provider: ^6.1.1
 
-  # Image Upload (BARU DITAMBAHKAN)
-  image_picker: ^1.0.4 # <-- PACKAGE UNTUK MENGAMBIL FOTO DARI GALERI/KAMERA
+  # Fungsionalitas Tanggal
+  intl: ^0.18.1
 
-  # Launcher Icons & Splash Screen (Aset Native)
+  # Image Upload
+  image_picker: ^1.0.4
+
+  # Launcher Icons & Splash Screen
   flutter_native_splash: ^2.3.11
 
 dev_dependencies:
@@ -30,16 +33,13 @@ dev_dependencies:
 
   flutter_lints: ^5.0.0
 
-# Bagian di bawah ini harus sejajar dengan 'flutter:'
-
 flutter:
   uses-material-design: true
 
-  # --- DEKLARASI ASSETS ---
   assets:
     - assets/icon/fitlife_icon.png
     - assets/splash/splash_logo.png
-    - assets/images/ # Folder untuk background_man.jpg, gym_room.png, dll.
+    - assets/images/
 
 
 # --- KONFIGURASI ICON ---
