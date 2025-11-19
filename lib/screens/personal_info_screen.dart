@@ -4,7 +4,7 @@ import 'package:provider/provider.dart';
 import '../widgets/custom_button.dart';
 import '../models/user_data.dart';
 import '../providers/user_provider.dart';
-import 'complete_profile_screen.dart'; // Import CompleteProfileScreen
+import 'complete_profile_screen.dart';
 
 class PersonalInfoScreen extends StatefulWidget {
   const PersonalInfoScreen({super.key});
@@ -108,6 +108,12 @@ class _PersonalInfoScreenState extends State<PersonalInfoScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // Hitung tinggi konten untuk memastikan Spacer bekerja
+    final screenHeight = MediaQuery.of(context).size.height;
+    final paddingTop = MediaQuery.of(context).padding.top;
+    final paddingBottom = MediaQuery.of(context).padding.bottom;
+    final contentHeight = screenHeight - paddingTop - paddingBottom;
+
     return Scaffold(
       body: Stack(
         children: [
@@ -127,176 +133,90 @@ class _PersonalInfoScreenState extends State<PersonalInfoScreen> {
           // Konten Utama
           SafeArea(
             child: SingleChildScrollView(
-              padding: const EdgeInsets.all(30.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const SizedBox(height: 10),
-                  // Judul/Logo
-                  const Text(
-                    'FitLife',
-                    style: TextStyle(
-                      fontSize: 48,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                    ),
-                  ),
-                  const SizedBox(height: 40),
-
-                  // 1. USERNAME
-                  const Text('Username', style: TextStyle(color: Colors.white, fontSize: 18)),
-                  const SizedBox(height: 8),
-                  TextField(
-                    controller: _usernameController,
-                    keyboardType: TextInputType.text,
-                    style: const TextStyle(color: Colors.white),
-                    decoration: _inputDecoration('John Doe'),
-                  ),
-                  const SizedBox(height: 25),
-
-                  // 2. WEIGHT & GENDER (Row)
-                  Row(
+              // PENTING: Bungkus dengan SizedBox untuk mengontrol tinggi
+              child: SizedBox(
+                height: contentHeight,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 30.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // WEIGHT
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Text('Weight', style: TextStyle(color: Colors.white, fontSize: 18)),
-                            const SizedBox(height: 8),
-                            TextField(
-                              controller: _weightController,
-                              keyboardType: TextInputType.number,
-                              style: const TextStyle(color: Colors.white),
-                              decoration: _inputDecoration('Kg'),
-                            ),
-                          ],
+                      const SizedBox(height: 10),
+                      // Judul/Logo
+                      const Text(
+                        'FitLife',
+                        style: TextStyle(
+                          fontSize: 48,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
                         ),
                       ),
-                      const SizedBox(width: 20),
-                      // GENDER
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Text('Gender', style: TextStyle(color: Colors.white, fontSize: 18)),
-                            const SizedBox(height: 8),
-                            DropdownButtonFormField<String>(
-                              value: _selectedGender,
-                              items: _genderOptions.map((String value) {
-                                return DropdownMenuItem<String>(
-                                  value: value,
-                                  child: Text(value, style: const TextStyle(color: Colors.white)),
-                                );
-                              }).toList(),
-                              onChanged: (String? newValue) {
-                                setState(() {
-                                  _selectedGender = newValue;
-                                });
-                              },
-                              decoration: _inputDecoration('Male/Female').copyWith(
-                                fillColor: Colors.black.withOpacity(0.4),
-                              ),
-                              dropdownColor: Colors.black87,
-                              icon: const Icon(Icons.arrow_drop_down, color: Colors.white70),
-                            ),
-                          ],
+                      const SizedBox(height: 40),
+
+                      // 1. USERNAME
+                      const Text('Username', style: TextStyle(color: Colors.white, fontSize: 18)),
+                      const SizedBox(height: 8),
+                      TextField(controller: _usernameController, keyboardType: TextInputType.text, style: const TextStyle(color: Colors.white), decoration: _inputDecoration('John Doe')),
+                      const SizedBox(height: 25),
+
+                      // 2. WEIGHT & GENDER (Row)
+                      Row(
+                        children: [
+                          // WEIGHT
+                          Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [const Text('Weight', style: TextStyle(color: Colors.white, fontSize: 18)), const SizedBox(height: 8), TextField(controller: _weightController, keyboardType: TextInputType.number, style: const TextStyle(color: Colors.white), decoration: _inputDecoration('Kg'))])),
+                          const SizedBox(width: 20),
+                          // GENDER
+                          Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [const Text('Gender', style: TextStyle(color: Colors.white, fontSize: 18)), const SizedBox(height: 8), DropdownButtonFormField<String>(value: _selectedGender, items: _genderOptions.map((String value) {return DropdownMenuItem<String>(value: value, child: Text(value, style: const TextStyle(color: Colors.white)));}).toList(), onChanged: (String? newValue) {setState(() {_selectedGender = newValue;});}, decoration: _inputDecoration('Male/Female').copyWith(fillColor: Colors.black.withOpacity(0.4)), dropdownColor: Colors.black87, icon: const Icon(Icons.arrow_drop_down, color: Colors.white70))])),
+                        ],
+                      ),
+                      const SizedBox(height: 25),
+
+                      // 3. HEIGHT & DATE OF BIRTH (Row)
+                      Row(
+                        children: [
+                          // HEIGHT
+                          Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [const Text('Height', style: TextStyle(color: Colors.white, fontSize: 18)), const SizedBox(height: 8), TextField(controller: _heightController, keyboardType: TextInputType.number, style: const TextStyle(color: Colors.white), decoration: _inputDecoration('cm'))])),
+                          const SizedBox(width: 20),
+                          // DATE OF BIRTH
+                          Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [const Text('Date of Birth', style: TextStyle(color: Colors.white, fontSize: 18)), const SizedBox(height: 8), GestureDetector(onTap: () => _selectDate(context), child: InputDecorator(decoration: _inputDecoration('Date of Birth').copyWith(fillColor: Colors.black.withOpacity(0.4), suffixIcon: const Icon(Icons.calendar_today, color: Colors.white70)), child: Text(_selectedDateOfBirth == null ? 'YYYY-MM-DD' : '${_selectedDateOfBirth!.year}-${_selectedDateOfBirth!.month.toString().padLeft(2, '0')}-${_selectedDateOfBirth!.day.toString().padLeft(2, '0')}', style: TextStyle(color: _selectedDateOfBirth == null ? Colors.white54 : Colors.white, fontSize: 15.0))))])),
+                        ],
+                      ),
+
+                      // SPACER: Mendorong tombol ke bawah
+                      const Spacer(),
+
+                      // Tombol Next
+                      CustomButton(
+                        text: 'Next',
+                        onPressed: _onNextPressed,
+                        backgroundColor: Colors.black.withOpacity(0.9),
+                        textColor: Colors.white,
+                      ),
+                      const SizedBox(height: 16),
+
+                      // Tombol Back
+                      Center(
+                        child: TextButton(
+                          onPressed: () {
+                            Navigator.pop(context); // Kembali ke halaman Sign Up sebelumnya
+                          },
+                          child: const Text(
+                            'Back',
+                            style: TextStyle(color: Colors.white70, fontSize: 16),
+                          ),
                         ),
                       ),
+
+                      // Footer
+                      const Center(
+                        child: Text(
+                          '© 2025 Kapal Lawd Cabang',
+                          style: TextStyle(fontSize: 12, color: Colors.white54),
+                        ),
+                      ),
+                      const SizedBox(height: 8), // Padding bawah
                     ],
                   ),
-                  const SizedBox(height: 25),
-
-                  // 3. HEIGHT & DATE OF BIRTH (Row)
-                  Row(
-                    children: [
-                      // HEIGHT
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Text('Height', style: TextStyle(color: Colors.white, fontSize: 18)),
-                            const SizedBox(height: 8),
-                            TextField(
-                              controller: _heightController,
-                              keyboardType: TextInputType.number,
-                              style: const TextStyle(color: Colors.white),
-                              decoration: _inputDecoration('cm'),
-                            ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(width: 20),
-                      // DATE OF BIRTH
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Text('Date of Birth', style: TextStyle(color: Colors.white, fontSize: 18)),
-                            const SizedBox(height: 8),
-                            GestureDetector(
-                              onTap: () => _selectDate(context),
-                              child: InputDecorator(
-                                decoration: _inputDecoration('Date of Birth').copyWith(
-                                  fillColor: Colors.black.withOpacity(0.4),
-                                  suffixIcon: const Icon(Icons.calendar_today, color: Colors.white70),
-                                ),
-                                child: Text(
-                                  _selectedDateOfBirth == null
-                                      ? 'YYYY-MM-DD'
-                                      : '${_selectedDateOfBirth!.year}-${_selectedDateOfBirth!.month.toString().padLeft(2, '0')}-${_selectedDateOfBirth!.day.toString().padLeft(2, '0')}',
-                                  style: TextStyle(
-                                    color: _selectedDateOfBirth == null ? Colors.white54 : Colors.white,
-                                    fontSize: 15.0,
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 50),
-
-                  // Tombol Next
-                  CustomButton(
-                    text: 'Next',
-                    onPressed: _onNextPressed,
-                    backgroundColor: Colors.black.withOpacity(0.9),
-                    textColor: Colors.white,
-                  ),
-                  const SizedBox(height: 16),
-
-                  // Tombol Back
-                  Center(
-                    child: TextButton(
-                      onPressed: () {
-                        Navigator.pop(context);
-                      },
-                      child: const Text(
-                        'Back',
-                        style: TextStyle(color: Colors.white70, fontSize: 16),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 50),
-                ],
-              ),
-            ),
-          ),
-
-          // Footer
-          const Positioned(
-            left: 0,
-            right: 0,
-            bottom: 20,
-            child: Center(
-              child: Text(
-                '© 2025 Kapal Lawd Cabang',
-                style: TextStyle(
-                  fontSize: 12,
-                  color: Colors.white54,
                 ),
               ),
             ),

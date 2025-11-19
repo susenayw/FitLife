@@ -1,6 +1,6 @@
 // lib/screens/login_screen.dart
 import 'package:flutter/material.dart';
-import 'personal_info_screen.dart'; // Import PersonalInfoScreen
+import 'personal_info_screen.dart';
 import '../widgets/custom_button.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -32,6 +32,7 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
+  // Gaya input field yang seragam
   InputDecoration _inputDecoration(String hintText, {Widget? suffixIcon}) {
     return InputDecoration(
       hintText: hintText,
@@ -56,6 +57,12 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // Hitung tinggi konten untuk memastikan Spacer bekerja
+    final screenHeight = MediaQuery.of(context).size.height;
+    final paddingTop = MediaQuery.of(context).padding.top;
+    final paddingBottom = MediaQuery.of(context).padding.bottom;
+    final contentHeight = screenHeight - paddingTop - paddingBottom;
+
     return Scaffold(
       body: Stack(
         children: [
@@ -72,98 +79,100 @@ class _LoginScreenState extends State<LoginScreen> {
             ),
           ),
 
+          // Konten Utama di dalam SafeArea
           SafeArea(
             child: SingleChildScrollView(
-              padding: const EdgeInsets.all(30.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const SizedBox(height: 50),
-                  // Judul/Logo
-                  const Center(
-                    child: Text(
-                      'FitLife',
-                      style: TextStyle(
-                        fontSize: 48,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 80),
-
-                  // E-mail Input
-                  const Text('E-mail', style: TextStyle(color: Colors.white, fontSize: 18)),
-                  const SizedBox(height: 8),
-                  TextField(
-                    controller: _emailController,
-                    keyboardType: TextInputType.emailAddress,
-                    style: const TextStyle(color: Colors.white),
-                    decoration: _inputDecoration('Example@mail.com'),
-                  ),
-                  const SizedBox(height: 25),
-
-                  // Password Input
-                  const Text('Password', style: TextStyle(color: Colors.white, fontSize: 18)),
-                  const SizedBox(height: 8),
-                  TextField(
-                    controller: _passwordController,
-                    obscureText: !_isPasswordVisible,
-                    style: const TextStyle(color: Colors.white),
-                    decoration: _inputDecoration(
-                      '********',
-                      suffixIcon: IconButton(
-                        icon: Icon(
-                          _isPasswordVisible ? Icons.visibility : Icons.visibility_off,
-                          color: Colors.white70,
+              // PENTING: Batasi tinggi SingleChildScrollView
+              child: SizedBox(
+                height: contentHeight,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 30.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const SizedBox(height: 50),
+                      // Judul/Logo
+                      const Center(
+                        child: Text(
+                          'FitLife',
+                          style: TextStyle(
+                            fontSize: 48,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
                         ),
-                        onPressed: () {
-                          setState(() {
-                            _isPasswordVisible = !_isPasswordVisible;
-                          });
-                        },
                       ),
-                    ),
-                  ),
-                  const SizedBox(height: 50),
+                      const SizedBox(height: 80),
 
-                  // Tombol Login
-                  CustomButton(
-                    text: 'Login',
-                    onPressed: _performLogin,
-                    backgroundColor: Colors.black.withOpacity(0.9),
-                    textColor: Colors.white,
-                  ),
-                  const SizedBox(height: 16),
-
-                  // Tombol Cancel
-                  Center(
-                    child: TextButton(
-                      onPressed: () {
-                        Navigator.pop(context);
-                      },
-                      child: const Text(
-                        'Cancel',
-                        style: TextStyle(color: Colors.white70, fontSize: 16),
+                      // E-mail Input
+                      const Text('E-mail', style: TextStyle(color: Colors.white, fontSize: 18)),
+                      const SizedBox(height: 8),
+                      TextField(
+                        controller: _emailController,
+                        keyboardType: TextInputType.emailAddress,
+                        style: const TextStyle(color: Colors.white),
+                        decoration: _inputDecoration('Example@mail.com'),
                       ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
+                      const SizedBox(height: 25),
 
-          // Footer
-          const Positioned(
-            left: 0,
-            right: 0,
-            bottom: 20,
-            child: Center(
-              child: Text(
-                '© 2025 Kapal Lawd Cabang',
-                style: TextStyle(
-                  fontSize: 12,
-                  color: Colors.white54,
+                      // Password Input
+                      const Text('Password', style: TextStyle(color: Colors.white, fontSize: 18)),
+                      const SizedBox(height: 8),
+                      TextField(
+                        controller: _passwordController,
+                        obscureText: !_isPasswordVisible,
+                        style: const TextStyle(color: Colors.white),
+                        decoration: _inputDecoration(
+                          '********',
+                          suffixIcon: IconButton(
+                            icon: Icon(
+                              _isPasswordVisible ? Icons.visibility : Icons.visibility_off,
+                              color: Colors.white70,
+                            ),
+                            onPressed: () {
+                              setState(() {
+                                _isPasswordVisible = !_isPasswordVisible;
+                              });
+                            },
+                          ),
+                        ),
+                      ),
+
+                      // SPACER: Mendorong tombol ke bawah
+                      const Spacer(),
+
+                      // Tombol Login
+                      CustomButton(
+                        text: 'Login',
+                        onPressed: _performLogin,
+                        backgroundColor: Colors.black.withOpacity(0.9),
+                        textColor: Colors.white,
+                      ),
+                      const SizedBox(height: 16),
+
+                      // Tombol Cancel
+                      Center(
+                        child: TextButton(
+                          onPressed: () {
+                            Navigator.pop(context); // Kembali ke halaman HomeAuthScreen
+                          },
+                          child: const Text(
+                            'Cancel',
+                            style: TextStyle(color: Colors.white70, fontSize: 16),
+                          ),
+                        ),
+                      ),
+
+                      // Footer
+                      const Center(
+                        child: Text(
+                          '© 2025 Kapal Lawd Cabang',
+                          style: TextStyle(fontSize: 12, color: Colors.white54),
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                    ],
+                  ),
                 ),
               ),
             ),
