@@ -3,9 +3,10 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import 'dart:io';
-import 'dart:ui'; // Diperlukan untuk ImageFilter
 
 import 'providers/user_provider.dart';
+// GANTI import start_workout_screen.dart dengan unified_activity_screen.dart
+import 'screens/unified_activity_screen.dart'; // <-- BARU: Import screen terpadu
 
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
@@ -15,27 +16,36 @@ class MainScreen extends StatefulWidget {
 }
 
 class _MainScreenState extends State<MainScreen> {
-  int _selectedIndex = 0; // Index untuk Bottom Navigation Bar
+  int _selectedIndex = 0;
 
   // Placeholder pages untuk Bottom Navigation Bar
   static const List<Widget> _widgetOptions = <Widget>[
     DashboardPage(), // 0. Home
     Text('Free Run Screen', style: TextStyle(color: Colors.white, fontSize: 30)), // 1. Free-Run
-    Text('Activity/Plus Screen', style: TextStyle(color: Colors.white, fontSize: 30)), // 2. Activity
+    // NOTE: Index 2 (Activity) dihandle oleh navigasi push terpisah di _onItemTapped
+    Text('Activity Placeholder', style: TextStyle(color: Colors.white, fontSize: 18)),
     Text('Social Screen', style: TextStyle(color: Colors.white, fontSize: 30)), // 3. Social
     Text('Settings Screen', style: TextStyle(color: Colors.white, fontSize: 30)), // 4. Settings
   ];
 
   void _onItemTapped(int index) {
-    setState(() {
-      _selectedIndex = index;
-    });
+    if (index == 2) { // Jika tombol Activity (index 2) ditekan
+      // Navigasi ke UnifiedActivityScreen (NavBar akan hilang di sana)
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => const UnifiedActivityScreen()),
+      );
+    } else {
+      // Navigasi normal untuk tab lain
+      setState(() {
+        _selectedIndex = index;
+      });
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      // Background color
       backgroundColor: const Color(0xFF640A0A),
 
       body: Center(
@@ -45,31 +55,11 @@ class _MainScreenState extends State<MainScreen> {
       // --- Bottom Navigation Bar ---
       bottomNavigationBar: BottomNavigationBar(
         items: const <BottomNavigationBarItem>[
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home_outlined),
-            activeIcon: Icon(Icons.home),
-            label: 'Home',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.directions_run_outlined), // Free-Run
-            activeIcon: Icon(Icons.directions_run),
-            label: 'Free-Run',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.add_circle_outline, size: 35), // Activity (Bigger Plus Icon)
-            activeIcon: Icon(Icons.add_circle, size: 35),
-            label: 'Activity',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.favorite_outline), // Social (Menggunakan Heart)
-            activeIcon: Icon(Icons.favorite),
-            label: 'Social',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.settings_outlined), // Settings
-            activeIcon: Icon(Icons.settings),
-            label: 'Settings',
-          ),
+          BottomNavigationBarItem(icon: Icon(Icons.home_outlined), activeIcon: Icon(Icons.home), label: 'Home'),
+          BottomNavigationBarItem(icon: Icon(Icons.directions_run_outlined), activeIcon: Icon(Icons.directions_run), label: 'Free-Run'),
+          BottomNavigationBarItem(icon: Icon(Icons.add_circle_outline, size: 35), activeIcon: Icon(Icons.add_circle, size: 35), label: 'Activity'),
+          BottomNavigationBarItem(icon: Icon(Icons.favorite_outline), activeIcon: Icon(Icons.favorite), label: 'Social'),
+          BottomNavigationBarItem(icon: Icon(Icons.settings_outlined), activeIcon: Icon(Icons.settings), label: 'Settings'),
         ],
         currentIndex: _selectedIndex,
         selectedItemColor: Colors.white,
@@ -85,7 +75,7 @@ class _MainScreenState extends State<MainScreen> {
 }
 
 // --- DASHBOARD BODY WIDGET ---
-class DashboardPage extends StatefulWidget { // <-- DIUBAH KE STATEFUL
+class DashboardPage extends StatefulWidget {
   const DashboardPage({super.key});
 
   @override
@@ -93,9 +83,8 @@ class DashboardPage extends StatefulWidget { // <-- DIUBAH KE STATEFUL
 }
 
 class _DashboardPageState extends State<DashboardPage> {
-  // Controller untuk input kalori (untuk dialog)
   final TextEditingController _calorieController = TextEditingController();
-  int _dailyCalorieIntake = 0; // State mock untuk kalori yang dicatat
+  int _dailyCalorieIntake = 0;
 
   @override
   void dispose() {
@@ -109,71 +98,99 @@ class _DashboardPageState extends State<DashboardPage> {
     showDialog(
       context: context,
       builder: (BuildContext dialogContext) {
-        return Theme(
-          data: ThemeData.dark(),
-          child: AlertDialog(
-            backgroundColor: const Color(0xFF640A0A),
-            contentPadding: const EdgeInsets.only(top: 10.0),
-            title: const Text(
-              'Add Daily Calorie Intake',
-              style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold),
-            ),
-            content: SingleChildScrollView(
-              child: ListBody(
-                children: <Widget>[
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 8.0),
-                    child: TextField(
-                      controller: _calorieController,
-                      keyboardType: TextInputType.number,
-                      style: const TextStyle(color: Colors.white, fontSize: 18),
-                      autofocus: true,
-                      decoration: InputDecoration(
-                        hintText: 'Enter Kcal',
-                        hintStyle: const TextStyle(color: Colors.white54),
-                        filled: true,
-                        fillColor: const Color(0x80000000), // Black with 50% opacity
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(10),
-                          borderSide: BorderSide.none,
-                        ),
-                        suffixText: 'Kcal',
-                        suffixStyle: const TextStyle(color: Colors.white70),
-                      ),
-                    ),
+        return Center(
+          child: SingleChildScrollView(
+            child: Container(
+              margin: const EdgeInsets.symmetric(horizontal: 24),
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: const Color(0xFF640A0A), // Warna merah tua
+                borderRadius: BorderRadius.circular(15),
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // Header (Back Button dan Title)
+                  const Text(
+                    'Add Daily Calorie Intake',
+                    style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold),
+                    textAlign: TextAlign.center,
                   ),
+                  const SizedBox(height: 30),
+
+                  // Input Field Kalori
+                  Row(
+                    children: [
+                      // Tombol Back (Keluar dari dialog)
+                      Container(
+                        width: 40,
+                        height: 40,
+                        decoration: BoxDecoration(
+                          color: Colors.black.withOpacity(0.5),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: IconButton(
+                          icon: const Icon(Icons.arrow_back, color: Colors.white),
+                          onPressed: () => Navigator.of(dialogContext).pop(),
+                          padding: EdgeInsets.zero,
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+
+                      // Input Field
+                      Expanded(
+                        child: TextField(
+                          controller: _calorieController,
+                          keyboardType: TextInputType.number,
+                          style: const TextStyle(color: Colors.white, fontSize: 18),
+                          autofocus: true,
+                          decoration: InputDecoration(
+                            hintText: 'Enter Kcal',
+                            hintStyle: const TextStyle(color: Colors.white54),
+                            filled: true,
+                            fillColor: Colors.white, // Input background putih
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(10),
+                              borderSide: BorderSide.none,
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+
+                      // Tombol Proceed (Warna Hijau)
+                      ElevatedButton(
+                        onPressed: () {
+                          final int? calories = int.tryParse(_calorieController.text);
+                          if (calories != null && calories > 0) {
+                            setState(() {
+                              _dailyCalorieIntake = calories; // Update state lokal
+                            });
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text('Calorie intake of $calories Kcal saved!')),
+                            );
+                            Navigator.of(dialogContext).pop();
+                          } else {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('Input kalori tidak valid.')),
+                            );
+                          }
+                        },
+                        child: const Text('Proceed', style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.lightGreenAccent, // Warna hijau terang
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 15),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 20),
                 ],
               ),
             ),
-            actions: <Widget>[
-              TextButton(
-                child: const Text('Cancel', style: TextStyle(color: Colors.white54)),
-                onPressed: () {
-                  Navigator.of(dialogContext).pop();
-                },
-              ),
-              ElevatedButton(
-                onPressed: () {
-                  final int? calories = int.tryParse(_calorieController.text);
-                  if (calories != null && calories > 0) {
-                    setState(() {
-                      _dailyCalorieIntake = calories; // Update state lokal
-                    });
-                    // TODO: Simpan ke Provider/Database di sini
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text('Calorie intake of $calories Kcal saved!')),
-                    );
-                    Navigator.of(dialogContext).pop();
-                  } else {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Input kalori tidak valid.')),
-                    );
-                  }
-                },
-                child: const Text('Save', style: TextStyle(color: Colors.black)),
-                style: ElevatedButton.styleFrom(backgroundColor: Colors.white),
-              ),
-            ],
           ),
         );
       },
@@ -186,10 +203,9 @@ class _DashboardPageState extends State<DashboardPage> {
     final userData = userProvider.currentUser;
     final bmiCategory = userProvider.getBMICategory();
 
-    // PERBAIKAN FORMAT TANGGAL: Hapus 'th' untuk kompatibilitas Intl
+    // Perbaikan format tanggal
     final today = DateFormat('EEEE, MMM d').format(DateTime.now());
 
-    // --- Ambil Profile Picture ---
     File? profileImageFile;
     if (userData?.profilePicturePath != null) {
       final file = File(userData!.profilePicturePath!);
@@ -198,7 +214,6 @@ class _DashboardPageState extends State<DashboardPage> {
       }
     }
 
-    // Tentukan warna teks BMI
     Color bmiColor;
     if (bmiCategory.contains('Underweight')) {
       bmiColor = Colors.blueAccent;
@@ -235,7 +250,7 @@ class _DashboardPageState extends State<DashboardPage> {
                         backgroundColor: Colors.white12,
                         backgroundImage: profileImageFile != null ? FileImage(profileImageFile) : null,
                         child: profileImageFile == null
-                            ? const Icon(Icons.person, color: Colors.white70, size: 30)
+                            ? const Icon(Icons.person, color: Colors.white70, size: 30) // Placeholder
                             : null,
                       ),
                       const SizedBox(width: 15),
@@ -248,10 +263,7 @@ class _DashboardPageState extends State<DashboardPage> {
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
-                                Text(
-                                  today,
-                                  style: const TextStyle(color: Colors.white, fontSize: 16),
-                                ),
+                                Text(today, style: const TextStyle(color: Colors.white, fontSize: 16)),
                                 const Icon(Icons.calendar_today, color: Colors.white, size: 16),
                               ],
                             ),
@@ -282,18 +294,20 @@ class _DashboardPageState extends State<DashboardPage> {
                         ),
                       ),
 
-                      // Add Calories Button
-                      ElevatedButton.icon(
-                        onPressed: _showCalorieInputDialog, // <-- Panggil dialog
-                        icon: const Icon(Icons.add, color: Colors.black),
-                        label: const Text('Add your Calories', style: TextStyle(color: Colors.black)),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.white,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(20),
+                      // Add Calories Button (CONDITIONAL RENDERING)
+                      // Tombol hanya muncul jika _dailyCalorieIntake masih 0
+                      if (_dailyCalorieIntake == 0)
+                        ElevatedButton.icon(
+                          onPressed: _showCalorieInputDialog, // <-- Panggil dialog
+                          icon: const Icon(Icons.add, color: Colors.black),
+                          label: const Text('Add your Calories', style: TextStyle(color: Colors.black)),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.white,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(20),
+                            ),
                           ),
                         ),
-                      ),
                     ],
                   ),
                 ],
