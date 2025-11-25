@@ -1,6 +1,6 @@
 // lib/providers/user_provider.dart
 import 'package:flutter/material.dart';
-import '../models/user_data.dart';
+import '../models/user_data.dart'; // Pastikan Anda memiliki model UserData
 
 class UserProvider with ChangeNotifier {
   UserData? _currentUser;
@@ -13,19 +13,33 @@ class UserProvider with ChangeNotifier {
     notifyListeners();
   }
 
-  void updateBio(String bio) {
+  // --- FUNGSI UPDATE DATA ---
+
+  void updateUsername(String username) {
     if (_currentUser != null) {
       // Menggunakan copyWith untuk menjaga immutability
+      _currentUser = _currentUser!.copyWith(username: username);
+      notifyListeners();
+    }
+  }
+
+  void updateBio(String bio) {
+    if (_currentUser != null) {
       _currentUser = _currentUser!.copyWith(bio: bio);
       notifyListeners();
     }
   }
 
-  // FUNGSI BARU: Update Profile Picture Path
   void updateProfilePicturePath(String? path) {
     if (_currentUser != null) {
-      // Menggunakan copyWith untuk menjaga immutability
       _currentUser = _currentUser!.copyWith(profilePicturePath: path);
+      notifyListeners();
+    }
+  }
+
+  void updatePhysicalData({required double weight, required double height}) {
+    if (_currentUser != null) {
+      _currentUser = _currentUser!.copyWith(weight: weight, height: height);
       notifyListeners();
     }
   }
