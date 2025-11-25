@@ -100,95 +100,98 @@ class _DashboardPageState extends State<DashboardPage> {
       builder: (BuildContext dialogContext) {
         return Center(
           child: SingleChildScrollView(
-            child: Container(
-              margin: const EdgeInsets.symmetric(horizontal: 24),
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                color: const Color(0xFF640A0A), // Warna merah tua
-                borderRadius: BorderRadius.circular(15),
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  // Header (Back Button dan Title)
-                  const Text(
-                    'Add Daily Calorie Intake',
-                    style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold),
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 30),
+            child: Material(
+              color: Colors.transparent,
+              child: Container(
+                margin: const EdgeInsets.symmetric(horizontal: 24),
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF640A0A),
+                  borderRadius: BorderRadius.circular(15),
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // Header (Back Button dan Title)
+                    const Text(
+                      'Add Daily Calorie Intake',
+                      style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold),
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 30),
 
-                  // Input Field Kalori
-                  Row(
-                    children: [
-                      // Tombol Back (Keluar dari dialog)
-                      Container(
-                        width: 40,
-                        height: 40,
-                        decoration: BoxDecoration(
-                          color: Colors.black.withOpacity(0.5),
-                          borderRadius: BorderRadius.circular(10),
+                    // Input Field Kalori
+                    Row(
+                      children: [
+                        // Tombol Back (Keluar dari dialog)
+                        Container(
+                          width: 40,
+                          height: 40,
+                          decoration: BoxDecoration(
+                            color: Colors.black.withOpacity(0.5),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: IconButton(
+                            icon: const Icon(Icons.arrow_back, color: Colors.white),
+                            onPressed: () => Navigator.of(dialogContext).pop(),
+                            padding: EdgeInsets.zero,
+                          ),
                         ),
-                        child: IconButton(
-                          icon: const Icon(Icons.arrow_back, color: Colors.white),
-                          onPressed: () => Navigator.of(dialogContext).pop(),
-                          padding: EdgeInsets.zero,
-                        ),
-                      ),
-                      const SizedBox(width: 10),
+                        const SizedBox(width: 10),
 
-                      // Input Field
-                      Expanded(
-                        child: TextField(
-                          controller: _calorieController,
-                          keyboardType: TextInputType.number,
-                          style: const TextStyle(color: Colors.white, fontSize: 18),
-                          autofocus: true,
-                          decoration: InputDecoration(
-                            hintText: 'Enter Kcal',
-                            hintStyle: const TextStyle(color: Colors.white54),
-                            filled: true,
-                            fillColor: Colors.white, // Input background putih
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(10),
-                              borderSide: BorderSide.none,
+                        // Input Field
+                        Expanded(
+                          child: TextField(
+                            controller: _calorieController,
+                            keyboardType: TextInputType.number,
+                            style: const TextStyle(color: Colors.black, fontSize: 18), // PERUBAHAN UTAMA: Ubah teks menjadi hitam
+                            autofocus: true,
+                            decoration: InputDecoration(
+                              hintText: 'Enter Kcal',
+                              hintStyle: const TextStyle(color: Colors.black54), // Ganti hint style juga
+                              filled: true,
+                              fillColor: Colors.white, // Input background putih
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(10),
+                                borderSide: BorderSide.none,
+                              ),
                             ),
                           ),
                         ),
-                      ),
-                      const SizedBox(width: 10),
+                        const SizedBox(width: 10),
 
-                      // Tombol Proceed (Warna Hijau)
-                      ElevatedButton(
-                        onPressed: () {
-                          final int? calories = int.tryParse(_calorieController.text);
-                          if (calories != null && calories > 0) {
-                            setState(() {
-                              _dailyCalorieIntake = calories; // Update state lokal
-                            });
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(content: Text('Calorie intake of $calories Kcal saved!')),
-                            );
-                            Navigator.of(dialogContext).pop();
-                          } else {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text('Input kalori tidak valid.')),
-                            );
-                          }
-                        },
-                        child: const Text('Proceed', style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.lightGreenAccent, // Warna hijau terang
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10),
+                        // Tombol Proceed (Warna Hijau)
+                        ElevatedButton(
+                          onPressed: () {
+                            final int? calories = int.tryParse(_calorieController.text);
+                            if (calories != null && calories > 0) {
+                              setState(() {
+                                _dailyCalorieIntake = calories;
+                              });
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(content: Text('Calorie intake of $calories Kcal saved!')),
+                              );
+                              Navigator.of(dialogContext).pop();
+                            } else {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(content: Text('Input kalori tidak valid.')),
+                              );
+                            }
+                          },
+                          child: const Text('Proceed', style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.lightGreenAccent,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 15),
                           ),
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 15),
                         ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 20),
-                ],
+                      ],
+                    ),
+                    const SizedBox(height: 20),
+                  ],
+                ),
               ),
             ),
           ),
