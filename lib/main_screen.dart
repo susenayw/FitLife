@@ -7,6 +7,7 @@ import 'dart:io';
 import 'providers/user_provider.dart';
 // GANTI import start_workout_screen.dart dengan unified_activity_screen.dart
 import 'screens/unified_activity_screen.dart'; // <-- BARU: Import screen terpadu
+import 'screens/free_run_screen.dart'; // <--- BARU: Import FreeRunScreen
 
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
@@ -21,7 +22,7 @@ class _MainScreenState extends State<MainScreen> {
   // Placeholder pages untuk Bottom Navigation Bar
   static const List<Widget> _widgetOptions = <Widget>[
     DashboardPage(), // 0. Home
-    Text('Free Run Screen', style: TextStyle(color: Colors.white, fontSize: 30)), // 1. Free-Run
+    const FreeRunScreen(), // 1. Free-Run <--- PERUBAHAN UTAMA: Menggunakan FreeRunScreen
     // NOTE: Index 2 (Activity) dihandle oleh navigasi push terpisah di _onItemTapped
     Text('Activity Placeholder', style: TextStyle(color: Colors.white, fontSize: 18)),
     Text('Social Screen', style: TextStyle(color: Colors.white, fontSize: 30)), // 3. Social
@@ -144,11 +145,11 @@ class _DashboardPageState extends State<DashboardPage> {
                           child: TextField(
                             controller: _calorieController,
                             keyboardType: TextInputType.number,
-                            style: const TextStyle(color: Colors.black, fontSize: 18), // PERUBAHAN UTAMA: Ubah teks menjadi hitam
+                            style: const TextStyle(color: Colors.black, fontSize: 18),
                             autofocus: true,
                             decoration: InputDecoration(
                               hintText: 'Enter Kcal',
-                              hintStyle: const TextStyle(color: Colors.black54), // Ganti hint style juga
+                              hintStyle: const TextStyle(color: Colors.black54),
                               filled: true,
                               fillColor: Colors.white, // Input background putih
                               border: OutlineInputBorder(
