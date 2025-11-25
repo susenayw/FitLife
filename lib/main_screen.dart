@@ -7,7 +7,8 @@ import 'dart:io';
 import 'providers/user_provider.dart';
 // GANTI import start_workout_screen.dart dengan unified_activity_screen.dart
 import 'screens/unified_activity_screen.dart'; // <-- BARU: Import screen terpadu
-import 'screens/free_run_screen.dart'; // <--- BARU: Import FreeRunScreen
+import 'screens/free_run_screen.dart'; // <--- Import FreeRunScreen
+import 'screens/social_screen.dart'; // <--- BARU: Import SocialScreen
 
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
@@ -22,10 +23,10 @@ class _MainScreenState extends State<MainScreen> {
   // Placeholder pages untuk Bottom Navigation Bar
   static const List<Widget> _widgetOptions = <Widget>[
     DashboardPage(), // 0. Home
-    const FreeRunScreen(), // 1. Free-Run <--- PERUBAHAN UTAMA: Menggunakan FreeRunScreen
+    const FreeRunScreen(), // 1. Free-Run
     // NOTE: Index 2 (Activity) dihandle oleh navigasi push terpisah di _onItemTapped
     Text('Activity Placeholder', style: TextStyle(color: Colors.white, fontSize: 18)),
-    Text('Social Screen', style: TextStyle(color: Colors.white, fontSize: 30)), // 3. Social
+    const SocialScreen(), // 3. Social <--- PERUBAHAN UTAMA: Menggunakan SocialScreen
     Text('Settings Screen', style: TextStyle(color: Colors.white, fontSize: 30)), // 4. Settings
   ];
 
