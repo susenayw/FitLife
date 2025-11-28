@@ -1,5 +1,6 @@
 // lib/screens/unified_activity_screen.dart
 import 'package:flutter/material.dart';
+import 'workout_detail_screen.dart';
 
 enum ActivityView { selection, cardioList, weightTrainingList }
 
@@ -95,7 +96,15 @@ class _UnifiedActivityScreenState extends State<UnifiedActivityScreen> {
                   title: Text(workouts[index], style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w500)),
                   trailing: const Icon(Icons.arrow_forward_ios, size: 16),
                   onTap: () {
-                    // TODO: Navigasi ke detail latihan
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => WorkoutDetailScreen(
+                          // Meneruskan nama latihan yang dipilih (misal: 'Jump Rope')
+                          workoutName: workouts[index],
+                        ),
+                      ),
+                    );
                   },
                 );
               },
