@@ -211,7 +211,6 @@ class _FreeRunScreenState extends State<FreeRunScreen> {
         // Tombol Start/Stop/Reset
         SizedBox(
           width: 200,
-          height: 60,
           child: _status == RunStatus.running
               ? ElevatedButton(
             onPressed: _stopRun,
