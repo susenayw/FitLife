@@ -1,23 +1,96 @@
 // lib/providers/user_provider.dart
 import 'package:flutter/material.dart';
-import '../models/user_data.dart'; // Pastikan Anda memiliki model UserData
+import '../models/user_data.dart';
+import '../models/workout_set.dart'; // Diperlukan untuk My Plan
 
 class UserProvider with ChangeNotifier {
   UserData? _currentUser;
 
+  // --- DATA KALORI HARIAN ---
+  int _netDailyCalorieGoal = 0;
+  int get netDailyCalorieGoal => _netDailyCalorieGoal;
+
+  void setDailyCalorieGoal(int intake) {
+    _netDailyCalorieGoal = intake;
+    notifyListeners();
+  }
+
+  void deductCaloriesBurned(int caloriesBurned) {
+    _netDailyCalorieGoal -= caloriesBurned;
+    notifyListeners();
+  }
+
+  // --- DATA MY PLAN & RECENT ACTIVITY ---
+  final List<WorkoutSet> _myPlan = [];
+  final List<WorkoutSet> _recentActivity = [];
+
+  List<WorkoutSet> get currentUserPlan => _myPlan;
+  List<WorkoutSet> get recentActivity => _recentActivity;
+
+  // ------------------------------------------------------------------
+  // FUNGSI KHUSUS UNTUK WORKOUT PLAN & ACTIVITY
+  // ------------------------------------------------------------------
+
+  // FUNGSI UNTUK MENAMBAHKAN LATIHAN KE PLAN
+  void addWorkoutToPlan(WorkoutSet workout) {
+    _myPlan.add(workout);
+    notifyListeners();
+  }
+
+  // FUNGSI UNTUK UPDATE SET/DURASI (Untuk Stepper di Dashboard)
+  void updatePlanWorkoutSets(int index, int newCount) {
+    if (index >= 0 && index < _myPlan.length) {
+      WorkoutSet workout = _myPlan[index];
+      bool isCardio = workout.type == 'Cardio';
+
+      // Menggunakan constructor untuk memperbarui model
+      _myPlan[index] = WorkoutSet(
+        name: workout.name,
+        type: workout.type,
+        caloriesBurned: workout.caloriesBurned,
+
+        sets: isCardio ? 1 : newCount,
+        repsOrDuration: isCardio ? newCount : 0,
+      );
+      notifyListeners();
+    }
+  }
+
+  // FUNGSI UNTUK MEMINDAHKAN LATIHAN DARI PLAN KE RECENT (SETELAH DONE)
+  void moveWorkoutToRecent(int index) {
+    if (index >= 0 && index < _myPlan.length) {
+      final completedWorkout = _myPlan.removeAt(index);
+
+      // Mengisi mock data kalori yang terbakar
+      if (completedWorkout.type == 'Cardio') {
+        completedWorkout.caloriesBurned = completedWorkout.repsOrDuration;
+      } else {
+        completedWorkout.caloriesBurned = completedWorkout.sets * 15;
+      }
+
+      // KURANGI KALORI BERSIH DI HEADER
+      deductCaloriesBurned(completedWorkout.caloriesBurned);
+
+      _recentActivity.insert(0, completedWorkout);
+      notifyListeners();
+    }
+  }
+
+  // ------------------------------------------------------------------
+  // FUNGSI LAMA (DATA USER)
+  // ------------------------------------------------------------------
+
   UserData? get currentUser => _currentUser;
 
   void setUserData(UserData data) {
-    // Digunakan saat pendaftaran awal (Personal Info Screen)
     _currentUser = data;
     notifyListeners();
   }
 
-  // --- FUNGSI UPDATE DATA ---
+  // Menambahkan kembali fungsi update user data yang sebelumnya disingkat
 
   void updateUsername(String username) {
     if (_currentUser != null) {
-      // Menggunakan copyWith untuk menjaga immutability
       _currentUser = _currentUser!.copyWith(username: username);
       notifyListeners();
     }
@@ -44,17 +117,16 @@ class UserProvider with ChangeNotifier {
     }
   }
 
+
   // --- LOGIKA KALKULASI BMI ---
 
   double calculateBMI() {
     if (_currentUser == null || _currentUser!.height <= 0 || _currentUser!.weight <= 0) {
       return 0.0;
     }
-    // BMI Formula: weight (kg) / (height (m) * height (m))
     double heightInMeters = _currentUser!.height / 100.0;
     double bmi = _currentUser!.weight / (heightInMeters * heightInMeters);
 
-    // Mengembalikan BMI dengan 1 angka desimal
     return double.parse(bmi.toStringAsFixed(1));
   }
 
@@ -62,7 +134,6 @@ class UserProvider with ChangeNotifier {
     double bmi = calculateBMI();
     if (bmi == 0.0) return "Data Belum Lengkap";
 
-    // Klasifikasi BMI sesuai standar
     if (bmi < 18.5) {
       return "Underweight";
     } else if (bmi >= 18.5 && bmi < 25.0) {
@@ -73,7 +144,7 @@ class UserProvider with ChangeNotifier {
       return "Obese Class I";
     } else if (bmi >= 35.0 && bmi < 40.0) {
       return "Obese Class II";
-    } else { // >= 40.0
+    } else {
       return "Obese Class III (Severe Obesity)";
     }
   }

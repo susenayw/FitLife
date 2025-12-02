@@ -4,12 +4,16 @@ import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import 'dart:io';
 
+// PASTIKAN ANDA MEMILIKI IMPORT INI UNTUK MODEL DAN PROVIDER
 import 'providers/user_provider.dart';
-// GANTI import start_workout_screen.dart dengan unified_activity_screen.dart
-import 'screens/unified_activity_screen.dart'; // <-- Import screen terpadu
-import 'screens/free_run_screen.dart'; // <--- Import FreeRunScreen
-import 'screens/social_screen.dart'; // <--- Import SocialScreen
-import 'screens/settings_screen.dart'; // <--- Import SettingsScreen
+import 'models/workout_set.dart';
+// --- END IMPORTS ---
+
+import 'screens/unified_activity_screen.dart';
+import 'screens/free_run_screen.dart';
+import 'screens/social_screen.dart';
+import 'screens/settings_screen.dart';
+import 'screens/recap_screen.dart'; // Import Recap Screen
 
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
@@ -33,13 +37,11 @@ class _MainScreenState extends State<MainScreen> {
 
   void _onItemTapped(int index) {
     if (index == 2) { // Jika tombol Activity (index 2) ditekan
-      // Navigasi ke UnifiedActivityScreen (NavBar akan hilang di sana)
       Navigator.push(
         context,
         MaterialPageRoute(builder: (context) => const UnifiedActivityScreen()),
       );
     } else {
-      // Navigasi normal untuk tab lain
       setState(() {
         _selectedIndex = index;
       });
@@ -87,7 +89,21 @@ class DashboardPage extends StatefulWidget {
 
 class _DashboardPageState extends State<DashboardPage> {
   final TextEditingController _calorieController = TextEditingController();
-  int _dailyCalorieIntake = 0;
+
+  // --- STATE UNTUK MY PLAN & RECENT ACTIVITY ---
+  bool _isPlanExpanded = false;
+  final Map<int, bool> _isRecentExpanded = {};
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final userProvider = Provider.of<UserProvider>(context, listen: false);
+      for (int i = 0; i < userProvider.recentActivity.length; i++) {
+        _isRecentExpanded[i] = false;
+      }
+    });
+  }
 
   @override
   void dispose() {
@@ -97,6 +113,7 @@ class _DashboardPageState extends State<DashboardPage> {
 
   void _showCalorieInputDialog() {
     _calorieController.clear();
+    final userProvider = Provider.of<UserProvider>(context, listen: false);
 
     showDialog(
       context: context,
@@ -168,9 +185,10 @@ class _DashboardPageState extends State<DashboardPage> {
                           onPressed: () {
                             final int? calories = int.tryParse(_calorieController.text);
                             if (calories != null && calories > 0) {
-                              setState(() {
-                                _dailyCalorieIntake = calories;
-                              });
+
+                              // SIMPAN KE PROVIDER
+                              userProvider.setDailyCalorieGoal(calories);
+
                               ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(content: Text('Calorie intake of $calories Kcal saved!')),
                               );
@@ -208,6 +226,7 @@ class _DashboardPageState extends State<DashboardPage> {
     final userProvider = Provider.of<UserProvider>(context);
     final userData = userProvider.currentUser;
     final bmiCategory = userProvider.getBMICategory();
+    final netKcal = userProvider.netDailyCalorieGoal; // Ambil Kalori Bersih
 
     // Perbaikan format tanggal
     final today = DateFormat('EEEE, MMM d').format(DateTime.now());
@@ -274,10 +293,36 @@ class _DashboardPageState extends State<DashboardPage> {
                               ],
                             ),
                             const SizedBox(height: 5),
-                            // Calorie (Menampilkan State yang dicatat)
-                            Text(
-                              '${_dailyCalorieIntake == 0 ? '-' : _dailyCalorieIntake} Kcal',
-                              style: const TextStyle(color: Colors.white, fontSize: 32, fontWeight: FontWeight.bold),
+                            // Calorie (Menampilkan Net Kcal dari Provider)
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Text(
+                                  '${netKcal == 0 ? '-' : netKcal} Kcal', // <-- NET KCAL
+                                  style: const TextStyle(color: Colors.white, fontSize: 32, fontWeight: FontWeight.bold),
+                                ),
+                                // Tombol RECAP BARU (Posisi di samping Kcal)
+                                if (userProvider.recentActivity.isNotEmpty) // Hanya tampil jika ada aktivitas
+                                  ElevatedButton(
+                                    onPressed: () {
+                                      // Navigasi ke RecapScreen
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(builder: (context) => const RecapScreen()),
+                                      );
+                                    },
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: Colors.red,
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(10),
+                                      ),
+                                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                                      minimumSize: Size.zero,
+                                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                    ),
+                                    child: const Text('RECAP', style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold)),
+                                  ),
+                              ],
                             ),
                           ],
                         ),
@@ -301,8 +346,8 @@ class _DashboardPageState extends State<DashboardPage> {
                       ),
 
                       // Add Calories Button (CONDITIONAL RENDERING)
-                      // Tombol hanya muncul jika _dailyCalorieIntake masih 0
-                      if (_dailyCalorieIntake == 0)
+                      // Tombol hanya muncul jika Net Kcal masih 0
+                      if (netKcal == 0) // <-- NET KCAL
                         ElevatedButton.icon(
                           onPressed: _showCalorieInputDialog, // <-- Panggil dialog
                           icon: const Icon(Icons.add, color: Colors.black),
@@ -321,49 +366,389 @@ class _DashboardPageState extends State<DashboardPage> {
             ),
             const SizedBox(height: 30),
 
-            // --- MY PLAN SECTION ---
+            // -----------------------------------------------------------------------
+            // --- MY PLAN SECTION (IMPLEMENTASI EXPAND/COLLAPSE & STEPPER) ---
+            // -----------------------------------------------------------------------
             const Text('My Plan', style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold)),
             const SizedBox(height: 15),
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(20.0),
-              decoration: BoxDecoration(
-                color: const Color(0xCC000000),
-                borderRadius: BorderRadius.circular(15),
-              ),
-              child: Column(
-                children: [
-                  const Text('Currently no plan', style: TextStyle(color: Colors.white54, fontSize: 16)),
-                  const SizedBox(height: 15),
-                  ElevatedButton.icon(
-                    onPressed: () {},
-                    icon: const Icon(Icons.add, color: Color(0xFFE50000)),
-                    label: const Text('Add your plan', style: TextStyle(color: Color(0xFFE50000), fontSize: 18)),
-                    style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.white,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                        padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 15)
+
+            Consumer<UserProvider>(
+              builder: (context, userProvider, child) {
+                final plan = userProvider.currentUserPlan; // Menggunakan getter yang diperbarui
+
+                if (plan.isEmpty) {
+                  // --- TAMPILAN JIKA TIDAK ADA RENCANA (No Plan) ---
+                  return Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(20.0),
+                    decoration: BoxDecoration(
+                      color: const Color(0xCC000000),
+                      borderRadius: BorderRadius.circular(15),
                     ),
+                    child: Column(
+                      children: [
+                        const Text('Currently no plan', style: TextStyle(color: Colors.white54, fontSize: 16)),
+                        const SizedBox(height: 15),
+                        ElevatedButton.icon(
+                          onPressed: () {
+                            // Navigasi ke UnifiedActivityScreen untuk menambahkan plan
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(builder: (context) => const UnifiedActivityScreen()),
+                            );
+                          },
+                          icon: const Icon(Icons.add, color: Color(0xFFE50000)),
+                          label: const Text('Add your plan', style: TextStyle(color: Color(0xFFE50000), fontSize: 18)),
+                          style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.white,
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                              padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 15)
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                }
+
+                // --- TAMPILAN UTAMA MY PLAN ---
+                return AnimatedContainer(
+                  duration: const Duration(milliseconds: 300),
+                  constraints: BoxConstraints(
+                    // Jika expanded, gunakan max height 400, jika tidak, batasi tinggi untuk item tunggal (sekitar 150)
+                    maxHeight: _isPlanExpanded ? 400.0 : 150.0,
                   ),
-                ],
-              ),
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(15.0),
+                  decoration: BoxDecoration(
+                    color: const Color(0xCC000000),
+                    borderRadius: BorderRadius.circular(15),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      // --- HEADER RECAP ---
+                      Row(
+                        children: [
+                          const Text('My Plan', style: TextStyle(color: Colors.white, fontSize: 16)),
+                          const SizedBox(width: 8),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                            decoration: BoxDecoration(color: Colors.red, borderRadius: BorderRadius.circular(5)),
+                            child: const Text('RECAP', style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold)),
+                          ),
+                          const Spacer(),
+                          // Tombol Collapse/Expand jika lebih dari 1 item (TOMBOL UTAMA EXPAND)
+                          if (plan.length > 1)
+                            TextButton(
+                              onPressed: () {
+                                setState(() {
+                                  _isPlanExpanded = !_isPlanExpanded;
+                                });
+                              },
+                              child: Text(_isPlanExpanded ? 'Collapse' : 'Expand', style: const TextStyle(color: Colors.white)),
+                            ),
+                        ],
+                      ),
+                      const SizedBox(height: 10),
+
+                      // --- DAFTAR LATIHAN ---
+                      Expanded(
+                        child: ListView.builder(
+                          // Jika belum expanded, hanya tampilkan item pertama
+                          itemCount: _isPlanExpanded ? plan.length : 1,
+                          padding: EdgeInsets.zero,
+                          physics: _isPlanExpanded ? const AlwaysScrollableScrollPhysics() : const NeverScrollableScrollPhysics(),
+                          shrinkWrap: true, // Penting untuk ListView di dalam Column/AnimatedContainer
+                          itemBuilder: (context, index) {
+                            final currentWorkout = plan[index];
+
+                            // Logika Ikon
+                            final icon = currentWorkout.name == 'Jump Rope'
+                                ? const Icon(Icons.accessibility_new, color: Colors.white, size: 40) // Ikon orang melompat
+                                : Icon(currentWorkout.iconData, color: Colors.white, size: 40);
+
+                            // Logic for Stepper properties
+                            final isCardio = currentWorkout.type == 'Cardio';
+                            final count = isCardio ? currentWorkout.repsOrDuration : currentWorkout.sets;
+                            final minCount = isCardio ? 30 : 1;
+                            final maxCount = isCardio ? 300 : 10;
+                            final step = isCardio ? 15 : 1;
+                            final displayLabel = isCardio ? 'Dur: ${count}s' : 'Set: $count';
+
+                            // Menentukan apakah harus menampilkan Stepper & Done (yaitu jika sudah expanded atau hanya 1 item)
+                            final bool showStepperAndDone = _isPlanExpanded || plan.length == 1;
+
+                            // Menggunakan Padding di sini untuk konsistensi item
+                            return Padding(
+                              padding: const EdgeInsets.symmetric(vertical: 8.0),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  // Kiri: Ikon dan Nama Latihan
+                                  Row(
+                                    children: [
+                                      icon,
+                                      const SizedBox(width: 15),
+
+                                      Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            // Memecah "Rope Jumping" menjadi dua baris
+                                              currentWorkout.name.replaceAll(' ', '\n'),
+                                              style: const TextStyle(color: Colors.white, fontSize: 16)),
+                                          // Tampilkan detail set/durasi di sini jika Stepper tidak muncul (saat item tersembunyi)
+                                          if (!showStepperAndDone)
+                                            Text(
+                                                currentWorkout.type == 'Cardio' ? 'Duration: ${currentWorkout.repsOrDuration}s' : 'Set : ${currentWorkout.sets}',
+                                                style: const TextStyle(color: Colors.white70, fontSize: 14)),
+                                        ],
+                                      ),
+                                    ],
+                                  ),
+
+                                  // KANAN: Stepper Counter dan Tombol Done/Expand
+                                  // HANYA tampilkan Stepper dan Done jika ShowStepperAndDone TRUE
+                                  if (showStepperAndDone)
+                                    Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        // 1. Stepper Counter
+                                        Container(
+                                          decoration: BoxDecoration(
+                                            color: Colors.white,
+                                            borderRadius: BorderRadius.circular(10),
+                                          ),
+                                          child: Row(
+                                            children: [
+                                              IconButton(
+                                                icon: const Icon(Icons.remove, color: Colors.black),
+                                                onPressed: count > minCount ? () {
+                                                  userProvider.updatePlanWorkoutSets(index, count - step);
+                                                } : null,
+                                                padding: EdgeInsets.zero,
+                                                constraints: const BoxConstraints(minWidth: 30, minHeight: 30),
+                                              ),
+                                              Padding(
+                                                padding: const EdgeInsets.symmetric(horizontal: 5),
+                                                child: Text(
+                                                  displayLabel,
+                                                  style: const TextStyle(color: Colors.black, fontWeight: FontWeight.bold, fontSize: 14),
+                                                ),
+                                              ),
+                                              IconButton(
+                                                icon: const Icon(Icons.add, color: Colors.black),
+                                                onPressed: count < maxCount ? () {
+                                                  userProvider.updatePlanWorkoutSets(index, count + step);
+                                                } : null,
+                                                padding: EdgeInsets.zero,
+                                                constraints: const BoxConstraints(minWidth: 30, minHeight: 30),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                        const SizedBox(width: 10),
+
+                                        // 2. Tombol Done
+                                        ElevatedButton(
+                                          onPressed: () {
+                                            // Aksi: DONE (Pindah ke Recent Activity)
+                                            userProvider.moveWorkoutToRecent(index);
+
+                                            // Reset state expand jika item terakhir dipindah
+                                            if (plan.length <= 2 && _isPlanExpanded) {
+                                              setState(() {
+                                                _isPlanExpanded = false;
+                                              });
+                                            }
+
+                                            ScaffoldMessenger.of(context).showSnackBar(
+                                              SnackBar(content: Text('${currentWorkout.name} marked as Done!')),
+                                            );
+                                          },
+                                          style: ElevatedButton.styleFrom(
+                                              backgroundColor: Colors.lightGreen,
+                                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10)
+                                          ),
+                                          child: const Text('Done', style: TextStyle(color: Colors.black, fontSize: 14, fontWeight: FontWeight.bold)),
+                                        ),
+                                      ],
+                                    ),
+
+                                  // HANYA tampilkan tombol Expand jika:
+                                  // 1. Ini adalah item pertama (index 0)
+                                  // 2. Ada lebih dari 1 item di plan
+                                  // 3. Stepper tidak ditampilkan (karena belum expanded)
+                                  if (!showStepperAndDone && index == 0 && plan.length > 1)
+                                    ElevatedButton(
+                                      onPressed: () {
+                                        // Aksi: EXPAND
+                                        setState(() {
+                                          _isPlanExpanded = true;
+                                        });
+                                      },
+                                      style: ElevatedButton.styleFrom(
+                                          backgroundColor: Colors.black,
+                                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10)
+                                      ),
+                                      child: const Text('Expand', style: TextStyle(color: Colors.white, fontSize: 16)),
+                                    ),
+                                ],
+                              ),
+                            );
+                          },
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              },
             ),
             const SizedBox(height: 30),
 
-            // --- RECENT ACTIVITY SECTION ---
+            // -----------------------------------------------------------------------
+            // --- RECENT ACTIVITY SECTION (EXPANDABLE CONTAINER) ---
+            // -----------------------------------------------------------------------
             const Text('Recent Activity', style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold)),
             const SizedBox(height: 15),
-            Container(
-              width: double.infinity,
-              height: 150,
-              padding: const EdgeInsets.all(20.0),
-              decoration: BoxDecoration(
-                color: const Color(0xCC000000),
-                borderRadius: BorderRadius.circular(15),
-              ),
-              child: const Center(
-                child: Text('No Activity', style: TextStyle(color: Colors.white54, fontSize: 16)),
-              ),
+
+            Consumer<UserProvider>(
+              builder: (context, userProvider, child) {
+                final recent = userProvider.recentActivity;
+
+                if (recent.isEmpty) {
+                  return Container(
+                    width: double.infinity,
+                    height: 150,
+                    padding: const EdgeInsets.all(20.0),
+                    decoration: BoxDecoration(
+                      color: const Color(0xCC000000),
+                      borderRadius: BorderRadius.circular(15),
+                    ),
+                    child: const Center(
+                      child: Text('No Activity', style: TextStyle(color: Colors.white54, fontSize: 16)),
+                    ),
+                  );
+                }
+
+                // --- TAMPILAN UTAMA RECENT ACTIVITY (Container Tunggal) ---
+                return AnimatedContainer(
+                  duration: const Duration(milliseconds: 300),
+                  constraints: BoxConstraints(
+                    // Batasi tinggi seperti My Plan
+                    maxHeight: recent.length > 1 && _isRecentExpanded.values.any((e) => e) ? 400.0 : 150.0,
+                  ),
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(15.0),
+                  decoration: BoxDecoration(
+                    color: const Color(0xCC000000),
+                    borderRadius: BorderRadius.circular(15),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      // Tombol Kembali (Back Arrow) di Header (untuk kembali ke history)
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.end,
+                        children: [
+                          // Tombol Back (Hanya panah)
+                          IconButton(
+                            icon: const Icon(Icons.arrow_back, color: Colors.white70, size: 24),
+                            onPressed: () {
+                              // TODO: Implementasi logika untuk melihat history lengkap
+                            },
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 5),
+
+                      // --- DAFTAR AKTIVITAS ---
+                      Expanded(
+                        child: ListView.builder(
+                          // Batasi item count jika belum expanded
+                          itemCount: recent.length > 1 && !_isRecentExpanded.values.any((e) => e) ? 1 : recent.length,
+                          padding: EdgeInsets.zero,
+                          physics: const AlwaysScrollableScrollPhysics(),
+                          shrinkWrap: true,
+                          itemBuilder: (context, index) {
+                            final activity = recent[index];
+                            final isExpanded = _isRecentExpanded[index] ?? false;
+
+                            // Logika Ikon (Rope Jumping)
+                            final icon = activity.name == 'Jump Rope'
+                                ? const Icon(Icons.accessibility_new, color: Colors.white, size: 40)
+                                : Icon(activity.iconData, color: Colors.white, size: 40);
+
+                            return Padding(
+                              padding: const EdgeInsets.only(bottom: 15.0),
+                              child: Column(
+                                children: [
+                                  Row(
+                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      // Kiri: Icon, Set, Nama Latihan
+                                      Row(
+                                        children: [
+                                          icon,
+                                          const SizedBox(width: 15),
+                                          Column(
+                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            children: [
+                                              Text('Set : ${activity.sets}', style: const TextStyle(color: Colors.white, fontSize: 16)),
+                                              Text(activity.name, style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
+                                            ],
+                                          ),
+                                        ],
+                                      ),
+
+                                      // Tombol Expand/Collapse
+                                      ElevatedButton(
+                                        onPressed: () {
+                                          setState(() {
+                                            _isRecentExpanded[index] = !isExpanded;
+                                          });
+                                        },
+                                        style: ElevatedButton.styleFrom(
+                                            backgroundColor: isExpanded ? Colors.redAccent : Colors.black,
+                                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10)
+                                        ),
+                                        child: Text(isExpanded ? 'Collapse' : 'Expand', style: const TextStyle(color: Colors.white, fontSize: 16)),
+                                      ),
+                                    ],
+                                  ),
+
+                                  // --- DETAIL KALORI (TAMPIL HANYA JIKA EXPANDED) ---
+                                  if (isExpanded) ...[
+                                    const Divider(color: Colors.white30, height: 25),
+                                    Center(
+                                      child: Column(
+                                        children: [
+                                          Text(
+                                              '-${activity.caloriesBurned} Calories', // Menampilkan kalori dengan tanda minus (sesuai mockup)
+                                              style: const TextStyle(color: Colors.redAccent, fontSize: 24, fontWeight: FontWeight.bold)),
+                                          const SizedBox(height: 5),
+                                          const Icon(Icons.local_fire_department, color: Colors.redAccent, size: 24),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
+
+                                ],
+                              ),
+                            );
+                          },
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              },
             ),
             const SizedBox(height: 20),
           ],

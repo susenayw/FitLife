@@ -1,13 +1,13 @@
 // lib/screens/complete_profile_screen.dart
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:image_picker/image_picker.dart'; // <-- BARU: Import Image Picker
-import 'dart:io'; // <-- BARU: Untuk File
+import 'package:image_picker/image_picker.dart';
+import 'dart:io';
 
 import '../providers/user_provider.dart';
 import '../main_screen.dart'; // Hanya sebagai fallback, tidak digunakan langsung
 import '../widgets/custom_button.dart';
-import 'confirmation_screen.dart'; // <-- BARU: Import ConfirmationScreen
+import 'confirmation_screen.dart'; // Import ConfirmationScreen
 
 class CompleteProfileScreen extends StatefulWidget {
   const CompleteProfileScreen({super.key});
@@ -21,30 +21,29 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> {
 
   File? _imageFile; // Menyimpan file gambar
 
-  // --- FUNGSI BARU: Memilih Gambar ---
+  // --- FUNGSI Memilih Gambar ---
   Future<void> _pickImage() async {
     final pickedFile = await ImagePicker().pickImage(source: ImageSource.gallery);
     if (pickedFile != null) {
       setState(() {
         _imageFile = File(pickedFile.path);
-        // Di sini Anda bisa menyimpan path ke Provider jika diperlukan
       });
     }
   }
 
   void _onConfirmPressed() {
-    // 1. Simpan Bio (Update Provider)
+    // 1. AKSES PROVIDER (Sangat Penting)
     final userProvider = Provider.of<UserProvider>(context, listen: false);
+
+    // 2. Simpan Bio (Update Provider) - BARIS YANG ERROR
     userProvider.updateBio(_bioController.text);
 
-    // 2. Simpan Path Gambar (Mock: Di dunia nyata, ini diupload ke server)
+    // 3. Simpan Path Gambar - BARIS YANG ERROR (Sudah di-uncomment)
     if (_imageFile != null) {
-      // Contoh: Menyimpan path lokal (atau URL upload) di Provider jika model UserData diperluas
-      // userProvider.updateProfilePicturePath(_imageFile!.path);
+      userProvider.updateProfilePicturePath(_imageFile!.path);
     }
 
-    // 3. Navigasi ke Confirmation Screen
-    // Menggunakan push biasa agar tombol 'Back' dari ConfirmationScreen berfungsi
+    // 4. Navigasi ke Confirmation Screen
     Navigator.push(
       context,
       MaterialPageRoute(builder: (context) => const ConfirmationScreen()),
@@ -93,6 +92,21 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> {
     final weight = userData?.weight.toStringAsFixed(0) ?? "0";
     final height = userData?.height.toStringAsFixed(0) ?? "0";
 
+    // Ambil path gambar untuk ditampilkan
+    File? profileImageFile;
+    // Prioritaskan gambar yang baru dipilih (_imageFile)
+    if (_imageFile != null) {
+      profileImageFile = _imageFile;
+    }
+    // Jika tidak ada gambar baru, gunakan yang ada di provider (jika ada)
+    else if (userData?.profilePicturePath != null) {
+      final file = File(userData!.profilePicturePath!);
+      if (file.existsSync()) {
+        profileImageFile = file;
+      }
+    }
+
+
     return Scaffold(
       body: Stack(
         children: [
@@ -121,7 +135,7 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> {
                         children: [
                           // KOLOM GAMBAR PROFIL (Dapat Ditekan)
                           GestureDetector(
-                            onTap: _pickImage, // <-- Panggil fungsi pick image saat ditekan
+                            onTap: _pickImage, // Panggil fungsi pick image saat ditekan
                             child: SizedBox(
                               width: 90,
                               height: 90,
@@ -131,8 +145,8 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> {
                                     radius: 45,
                                     backgroundColor: Colors.white10,
                                     // Menampilkan gambar yang dipilih, atau placeholder
-                                    backgroundImage: _imageFile != null ? FileImage(_imageFile!) : null,
-                                    child: _imageFile == null
+                                    backgroundImage: profileImageFile != null ? FileImage(profileImageFile!) : null,
+                                    child: profileImageFile == null
                                         ? const Icon(Icons.person, color: Colors.white70, size: 50)
                                         : null,
                                   ),

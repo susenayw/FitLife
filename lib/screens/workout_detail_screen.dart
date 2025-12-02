@@ -1,7 +1,13 @@
-// lib/screens/workout_detail_screen.dart (KODE FINAL YANG BENAR)
+// lib/screens/workout_detail_screen.dart (KODE FINAL YANG BENAR DAN FUNGSIONAL)
 
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../providers/user_provider.dart';
+import '../models/workout_set.dart';
 
+// ====================================================================
+// DIKEMBALIKAN MENJADI STATELESS WIDGET
+// ====================================================================
 class WorkoutDetailScreen extends StatelessWidget {
   final String workoutName;
 
@@ -151,6 +157,17 @@ class WorkoutDetailScreen extends StatelessWidget {
     // Titik tombol 'Add' harus melayang (sedikit di atas card)
     final double buttonFloatPosition = cardTopPosition - 25;
 
+    // Logika untuk menentukan tipe (Cardio/Weight) dan default set/durasi
+    final isWeightTraining = [
+      'Bench Press', 'Squat', 'Dead Lift', 'Shoulder Press',
+      'Pull-Up', 'Barbell Row', 'Leg Press', 'Bicep Curl', 'Tricep Extension'
+    ].contains(workoutName);
+    final workoutType = isWeightTraining ? 'Weight Training' : 'Cardio';
+
+    // Default Set/Duration (dapat disesuaikan)
+    final sets = isWeightTraining ? 3 : 1;
+    final repsOrDuration = isWeightTraining ? 10 : 60; // 10 Reps atau 60 Detik
+
     return Scaffold(
       backgroundColor: const Color(0xFF640A0A), // Warna merah tua
       body: Stack(
@@ -266,7 +283,7 @@ class WorkoutDetailScreen extends StatelessWidget {
             ),
           ),
 
-          // 2. Tombol ADD Melayang (DIKEMBALIKAN)
+          // 2. Tombol ADD Melayang (Gunakan default karena input utama ada di halaman list)
           Positioned(
             top: buttonFloatPosition,
             left: 0,
@@ -274,13 +291,27 @@ class WorkoutDetailScreen extends StatelessWidget {
             child: Center(
               child: ElevatedButton.icon(
                 onPressed: () {
-                  // TODO: Logika untuk menambahkan latihan ke rencana atau sesi
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('${workoutName} added!')),
+                  final userProvider = Provider.of<UserProvider>(context, listen: false);
+
+                  final newWorkout = WorkoutSet(
+                    name: workoutName,
+                    type: workoutType,
+                    sets: sets,
+                    repsOrDuration: repsOrDuration,
                   );
+
+                  // PANGGIL FUNGSI PROVIDER
+                  userProvider.addWorkoutToPlan(newWorkout);
+
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('${workoutName} added to My Plan with default settings!')),
+                  );
+
+                  // Opsional: Kembali ke halaman daftar setelah menambahkan
+                  Navigator.pop(context);
                 },
                 icon: const Icon(Icons.add, color: Colors.black),
-                label: const Text('Add', style: TextStyle(color: Colors.black, fontSize: 18, fontWeight: FontWeight.bold)),
+                label: const Text('Add (Default)', style: TextStyle(color: Colors.black, fontSize: 18, fontWeight: FontWeight.bold)),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.white,
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
@@ -294,6 +325,4 @@ class WorkoutDetailScreen extends StatelessWidget {
       ),
     );
   }
-
-// CATATAN: Widget helper _buildCalorieStat tidak diperlukan karena statistik kalori sudah dihapus.
 }
