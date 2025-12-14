@@ -1,13 +1,12 @@
-// lib/screens/complete_profile_screen.dart
+// lib/screens/complete_profile_screen.dart (MODIFIKASI)
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
 
 import '../providers/user_provider.dart';
-import '../main_screen.dart'; // Hanya sebagai fallback, tidak digunakan langsung
 import '../widgets/custom_button.dart';
-import 'confirmation_screen.dart'; // Import ConfirmationScreen
+import '../routes/app_routes.dart'; // <-- BARU
 
 class CompleteProfileScreen extends StatefulWidget {
   const CompleteProfileScreen({super.key});
@@ -27,27 +26,26 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> {
     if (pickedFile != null) {
       setState(() {
         _imageFile = File(pickedFile.path);
+        // Simpan path lokal (mock) ke provider, yang akan disimpan ke Firestore
+        Provider.of<UserProvider>(context, listen: false).updateProfilePicturePath(_imageFile!.path);
       });
     }
   }
 
   void _onConfirmPressed() {
-    // 1. AKSES PROVIDER (Sangat Penting)
+    // 1. AKSES PROVIDER
     final userProvider = Provider.of<UserProvider>(context, listen: false);
 
-    // 2. Simpan Bio (Update Provider) - BARIS YANG ERROR
+    // 2. Simpan Bio (Update Provider dan otomatis ke Firestore)
     userProvider.updateBio(_bioController.text);
 
-    // 3. Simpan Path Gambar - BARIS YANG ERROR (Sudah di-uncomment)
-    if (_imageFile != null) {
-      userProvider.updateProfilePicturePath(_imageFile!.path);
-    }
-
-    // 4. Navigasi ke Confirmation Screen
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (context) => const ConfirmationScreen()),
+    // Tampilkan notifikasi
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Profile completed and saved!')),
     );
+
+    // 3. Navigasi ke Confirmation Screen
+    Navigator.pushNamed(context, AppRoutes.confirmation); // <-- DIUBAH
   }
 
   @override

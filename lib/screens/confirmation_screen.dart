@@ -1,9 +1,9 @@
-// lib/screens/confirmation_screen.dart
+// lib/screens/confirmation_screen.dart (MODIFIKASI)
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/user_provider.dart';
-import '../main_screen.dart';
 import '../widgets/custom_button.dart';
+import '../routes/app_routes.dart'; // <-- BARU
 import 'dart:io';
 
 class ConfirmationScreen extends StatelessWidget {
@@ -21,12 +21,7 @@ class ConfirmationScreen extends StatelessWidget {
     return Consumer<UserProvider>(
       builder: (context, userProvider, child) {
         final username = userProvider.currentUser?.username ?? "FitLife User";
-        // Asumsi: Kita akan menyimpan path gambar di provider setelah upload berhasil
-        // Untuk saat ini, kita gunakan placeholder hardcoded untuk path gambar
-        // Lanjutkan dengan menggunakan path gambar yang sebenarnya jika diimplementasikan.
-
-        // Placeholder path gambar (Anda harus menyimpannya di provider jika ingin benar-benar fungsional)
-        final imagePath = userProvider.currentUser?.bio; // Menggunakan bio sebagai mock image path
+        final imagePath = userProvider.currentUser?.profilePicturePath;
 
         return Scaffold(
           body: Stack(
@@ -58,8 +53,10 @@ class ConfirmationScreen extends StatelessWidget {
                             radius: 80,
                             backgroundColor: Colors.white,
                             // Menentukan sumber gambar: File (jika ada) atau placeholder
-                            backgroundImage: imagePath != null ? FileImage(File(imagePath)) : null,
-                            child: imagePath == null
+                            backgroundImage: imagePath != null && File(imagePath).existsSync()
+                                ? FileImage(File(imagePath))
+                                : null,
+                            child: imagePath == null || !File(imagePath).existsSync()
                                 ? const Icon(Icons.person, color: Colors.black, size: 80) // Placeholder
                                 : null,
                           ),
@@ -98,10 +95,7 @@ class ConfirmationScreen extends StatelessWidget {
                             text: 'Proceed',
                             onPressed: () {
                               // NAVIGASI AKHIR: Masuk ke MainScreen/Dashboard
-                              Navigator.pushReplacement(
-                                context,
-                                MaterialPageRoute(builder: (context) => const MainScreen()),
-                              );
+                              Navigator.pushReplacementNamed(context, AppRoutes.mainScreen); // <-- DIUBAH
                             },
                             backgroundColor: Colors.black.withOpacity(0.9),
                             textColor: Colors.white,

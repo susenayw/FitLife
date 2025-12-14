@@ -25,6 +25,11 @@ dependencies:
   # Launcher Icons & Splash Screen
   flutter_native_splash: ^2.3.11
 
+  # --- FIREBASE DEPENDENCIES (BARU) ---
+  firebase_core: ^3.15.2
+  firebase_auth: ^5.0.0
+  cloud_firestore: ^5.0.0
+
 dev_dependencies:
   flutter_test:
     sdk: flutter

@@ -1,11 +1,7 @@
-// lib/screens/home_auth_screen.dart
+// lib/screens/home_auth_screen.dart (MODIFIKASI)
 import 'package:flutter/material.dart';
 import '../widgets/custom_button.dart';
-import 'login_screen.dart';
-import 'signup_screen.dart';
-// Jika Anda menggunakan import package:
-// import 'package:fitlifeapp/screens/login_screen.dart';
-// import 'package:fitlifeapp/screens/signup_screen.dart';
+import '../routes/app_routes.dart'; // <-- BARU
 
 class HomeAuthScreen extends StatelessWidget {
   const HomeAuthScreen({super.key});
@@ -37,7 +33,7 @@ class HomeAuthScreen extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.start,
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  Spacer(flex: 5),
+                  const Spacer(flex: 5),
 
                   // Logo/Nama Aplikasi
                   const Text(
@@ -75,16 +71,13 @@ class HomeAuthScreen extends StatelessWidget {
                     textAlign: TextAlign.center,
                   ),
 
-                  Spacer(flex: 3),
+                  const Spacer(flex: 3),
 
                   // Tombol Login
                   CustomButton(
                     text: 'Login',
                     onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (context) => const LoginScreen()),
-                      );
+                      Navigator.pushNamed(context, AppRoutes.login); // <-- DIUBAH
                     },
                     backgroundColor: Colors.black.withOpacity(0.9),
                     textColor: Colors.white,
@@ -96,10 +89,7 @@ class HomeAuthScreen extends StatelessWidget {
                   CustomButton(
                     text: 'Sign Up',
                     onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (context) => const SignupScreen()),
-                      );
+                      Navigator.pushNamed(context, AppRoutes.signUp); // <-- DIUBAH
                     },
                     backgroundColor: Colors.transparent,
                     textColor: Colors.white,

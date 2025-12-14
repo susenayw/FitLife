@@ -1,8 +1,9 @@
-// lib/screens/signup_screen.dart
+// lib/screens/signup_screen.dart (MODIFIKASI)
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart'; // <-- BARU
 import '../widgets/custom_button.dart';
-import 'personal_info_screen.dart';
-import 'login_screen.dart';
+import '../providers/user_provider.dart'; // <-- BARU
+import '../routes/app_routes.dart'; // <-- BARU
 
 class SignupScreen extends StatefulWidget {
   const SignupScreen({super.key});
@@ -19,7 +20,7 @@ class _SignupScreenState extends State<SignupScreen> {
   bool _isPasswordVisible = false;
   bool _isConfirmPasswordVisible = false;
 
-  void _performSignup() {
+  void _performSignup() async { // <-- JADIKAN ASYNC
     final password = _passwordController.text;
     final confirmPassword = _confirmPasswordController.text;
     final email = _emailController.text;
@@ -38,11 +39,26 @@ class _SignupScreenState extends State<SignupScreen> {
       return;
     }
 
-    // NAVIGASI DARI SIGN UP KE PERSONAL INFO SCREEN
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (context) => const PersonalInfoScreen()),
+    // 1. PANGGIL SIGN UP VIA PROVIDER
+    final userProvider = Provider.of<UserProvider>(context, listen: false);
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Mendaftarkan akun...')),
     );
+
+    // Panggil fungsi Firebase Sign Up
+    final errorMessage = await userProvider.signUp(email: email, password: password);
+
+    if (errorMessage != null) {
+      // Gagal Sign Up
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Sign Up Gagal: $errorMessage')),
+      );
+      return;
+    }
+
+    // 2. NAVIGASI DARI SIGN UP KE PERSONAL INFO SCREEN
+    Navigator.pushNamed(context, AppRoutes.personalInfo); // <-- DIUBAH
   }
 
   // Gaya input field yang seragam

@@ -1,10 +1,11 @@
-// lib/screens/personal_info_screen.dart
+// lib/screens/personal_info_screen.dart (MODIFIKASI)
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:intl/intl.dart'; // <-- BARU
 import '../widgets/custom_button.dart';
 import '../models/user_data.dart';
 import '../providers/user_provider.dart';
-import 'complete_profile_screen.dart';
+import '../routes/app_routes.dart'; // <-- BARU
 
 class PersonalInfoScreen extends StatefulWidget {
   const PersonalInfoScreen({super.key});
@@ -41,19 +42,19 @@ class _PersonalInfoScreenState extends State<PersonalInfoScreen> {
   Future<void> _selectDate(BuildContext context) async {
     final DateTime? picked = await showDatePicker(
       context: context,
-      initialDate: DateTime.now().subtract(const Duration(days: 365 * 18)),
+      initialDate: _selectedDateOfBirth ?? DateTime(2000),
       firstDate: DateTime(1900),
       lastDate: DateTime.now(),
-      builder: (context, child) {
+      builder: (BuildContext context, Widget? child) {
         return Theme(
           data: ThemeData.dark().copyWith(
-            colorScheme: ColorScheme.dark(
-              primary: const Color(0xFFE50000),
+            colorScheme: const ColorScheme.dark(
+              primary: Color(0xFF640A0A), // Warna Merah tua
               onPrimary: Colors.white,
-              surface: Colors.black87,
+              surface: Colors.black,
               onSurface: Colors.white,
             ),
-            dialogBackgroundColor: Colors.black87,
+            dialogBackgroundColor: Colors.black,
           ),
           child: child!,
         );
@@ -80,8 +81,8 @@ class _PersonalInfoScreenState extends State<PersonalInfoScreen> {
       return;
     }
 
-    // 2. Simpan Data ke Provider
-    final userData = UserData(
+    // 2. Buat Objek UserData yang baru
+    final newUserData = UserData(
       username: username,
       weight: weight,
       height: height,
@@ -89,13 +90,11 @@ class _PersonalInfoScreenState extends State<PersonalInfoScreen> {
       dateOfBirth: _selectedDateOfBirth!,
     );
 
-    Provider.of<UserProvider>(context, listen: false).setUserData(userData);
+    // 3. Simpan Data ke Provider (yang akan menyimpannya ke Firestore, mempertahankan UID & Email)
+    Provider.of<UserProvider>(context, listen: false).setUserData(newUserData);
 
-    // 3. Navigasi ke CompleteProfileScreen
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (context) => const CompleteProfileScreen()),
-    );
+    // 4. Navigasi ke CompleteProfileScreen
+    Navigator.pushNamed(context, AppRoutes.completeProfile); // <-- DIUBAH
   }
 
   @override
@@ -163,7 +162,7 @@ class _PersonalInfoScreenState extends State<PersonalInfoScreen> {
                       Row(
                         children: [
                           // WEIGHT
-                          Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [const Text('Weight', style: TextStyle(color: Colors.white, fontSize: 18)), const SizedBox(height: 8), TextField(controller: _weightController, keyboardType: TextInputType.number, style: const TextStyle(color: Colors.white), decoration: _inputDecoration('Kg'))])),
+                          Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [const Text('Weight (Kg)', style: TextStyle(color: Colors.white, fontSize: 18)), const SizedBox(height: 8), TextField(controller: _weightController, keyboardType: TextInputType.number, style: const TextStyle(color: Colors.white), decoration: _inputDecoration('Kg'))])),
                           const SizedBox(width: 20),
                           // GENDER
                           Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [const Text('Gender', style: TextStyle(color: Colors.white, fontSize: 18)), const SizedBox(height: 8), DropdownButtonFormField<String>(value: _selectedGender, items: _genderOptions.map((String value) {return DropdownMenuItem<String>(value: value, child: Text(value, style: const TextStyle(color: Colors.white)));}).toList(), onChanged: (String? newValue) {setState(() {_selectedGender = newValue;});}, decoration: _inputDecoration('Male/Female').copyWith(fillColor: Colors.black.withOpacity(0.4)), dropdownColor: Colors.black87, icon: const Icon(Icons.arrow_drop_down, color: Colors.white70))])),
@@ -175,10 +174,10 @@ class _PersonalInfoScreenState extends State<PersonalInfoScreen> {
                       Row(
                         children: [
                           // HEIGHT
-                          Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [const Text('Height', style: TextStyle(color: Colors.white, fontSize: 18)), const SizedBox(height: 8), TextField(controller: _heightController, keyboardType: TextInputType.number, style: const TextStyle(color: Colors.white), decoration: _inputDecoration('cm'))])),
+                          Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [const Text('Height (cm)', style: TextStyle(color: Colors.white, fontSize: 18)), const SizedBox(height: 8), TextField(controller: _heightController, keyboardType: TextInputType.number, style: const TextStyle(color: Colors.white), decoration: _inputDecoration('cm'))])),
                           const SizedBox(width: 20),
                           // DATE OF BIRTH
-                          Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [const Text('Date of Birth', style: TextStyle(color: Colors.white, fontSize: 18)), const SizedBox(height: 8), GestureDetector(onTap: () => _selectDate(context), child: InputDecorator(decoration: _inputDecoration('Date of Birth').copyWith(fillColor: Colors.black.withOpacity(0.4), suffixIcon: const Icon(Icons.calendar_today, color: Colors.white70)), child: Text(_selectedDateOfBirth == null ? 'YYYY-MM-DD' : '${_selectedDateOfBirth!.year}-${_selectedDateOfBirth!.month.toString().padLeft(2, '0')}-${_selectedDateOfBirth!.day.toString().padLeft(2, '0')}', style: TextStyle(color: _selectedDateOfBirth == null ? Colors.white54 : Colors.white, fontSize: 15.0))))])),
+                          Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [const Text('Date of Birth', style: TextStyle(color: Colors.white, fontSize: 18)), const SizedBox(height: 8), GestureDetector(onTap: () => _selectDate(context), child: InputDecorator(decoration: _inputDecoration('Date of Birth').copyWith(fillColor: Colors.black.withOpacity(0.4), suffixIcon: const Icon(Icons.calendar_today, color: Colors.white70)), child: Text(_selectedDateOfBirth == null ? 'YYYY-MM-DD' : DateFormat('yyyy-MM-dd').format(_selectedDateOfBirth!), style: TextStyle(color: _selectedDateOfBirth == null ? Colors.white54 : Colors.white, fontSize: 15.0))))])),
                         ],
                       ),
 

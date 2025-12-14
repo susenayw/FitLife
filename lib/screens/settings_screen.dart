@@ -1,4 +1,4 @@
-// lib/screens/settings_screen.dart
+// lib/screens/settings_screen.dart (MODIFIKASI)
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -6,7 +6,8 @@ import 'package:image_picker/image_picker.dart';
 import 'dart:io';
 
 import '../providers/user_provider.dart';
-import '../widgets/custom_button.dart'; // Asumsi CustomButton sudah ada
+import '../widgets/custom_button.dart';
+import '../routes/app_routes.dart'; // <-- BARU
 
 // =======================================================
 // A. SETTINGS MENU UTAMA (Tab yang terlihat di MainScreen)
@@ -17,12 +18,17 @@ class SettingsScreen extends StatelessWidget {
 
   // Widget Pembantu untuk Tombol Navigasi
   Widget _buildSettingsButton(BuildContext context, {required String text, required Widget targetScreen}) {
+    // Menggunakan navigasi pushNamed ke rute yang sudah didefinisikan jika targetScreen adalah salah satu route utama
+    String? routeName;
+    if (text == 'Edit Profile') routeName = AppRoutes.completeProfile; // Kita asumsikan ini Edit Profile
+    if (text == 'Account') routeName = AppRoutes.settings; // Kita arahkan ke rute settings utama
+
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 8.0),
       child: ElevatedButton(
         onPressed: () {
-          // Menggunakan Navigator.push untuk melompat ke layar penuh baru (menyembunyikan NavBar)
+          // Navigasi ke layar penuh
           Navigator.push(
             context,
             MaterialPageRoute(builder: (context) => targetScreen),
@@ -46,29 +52,27 @@ class SettingsScreen extends StatelessWidget {
   Widget _buildMenuView(BuildContext context) {
     return Column(
       children: [
-        // Menambahkan SizedBox untuk memberi ruang kosong di atas.
         const SizedBox(height: 30),
 
-        // Navigasi ke Layar Penuh 1: Edit Profile
         _buildSettingsButton(
           context,
-          text: 'Edit Profile',
+          text: 'Edit Profile & Bio',
           targetScreen: const EditProfileFullScreen(),
         ),
 
-        // Navigasi ke Layar Penuh 2: Account
         _buildSettingsButton(
           context,
-          text: 'Account',
+          text: 'Account & Change Password',
           targetScreen: const AccountFullScreen(),
         ),
 
-        // Navigasi ke Layar Penuh 3: Updates
         _buildSettingsButton(
           context,
-          text: 'Updates',
+          text: 'Update Physical Data (Weight/Height)',
           targetScreen: const UpdatesFullScreen(),
         ),
+
+        // Tombol logout ditempatkan di AccountFullScreen
 
         const Spacer(),
         const Padding(
@@ -92,7 +96,7 @@ class SettingsScreen extends StatelessWidget {
         elevation: 0,
         automaticallyImplyLeading: false,
         // Judul AppBar
-        title: const Text('Edit Profile', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+        title: const Text('Settings', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
       ),
       body: SafeArea(
         child: _buildMenuView(context),
@@ -102,7 +106,7 @@ class SettingsScreen extends StatelessWidget {
 }
 
 // =======================================================
-// B. EDIT PROFILE FULL SCREEN (Layar Penuh, Tanpa NavBar)
+// B. EDIT PROFILE FULL SCREEN (Mengubah Username/Bio/Pic)
 // =======================================================
 
 class EditProfileFullScreen extends StatefulWidget {
@@ -137,6 +141,8 @@ class _EditProfileFullScreenState extends State<EditProfileFullScreen> {
     if (pickedFile != null) {
       setState(() {
         _imageFile = File(pickedFile.path);
+        // Simpan path gambar ke provider (otomatis ke Firestore)
+        Provider.of<UserProvider>(context, listen: false).updateProfilePicturePath(_imageFile!.path);
       });
     }
   }
@@ -149,14 +155,10 @@ class _EditProfileFullScreenState extends State<EditProfileFullScreen> {
     }
     userProvider.updateBio(_bioController.text);
 
-    if (_imageFile != null) {
-      userProvider.updateProfilePicturePath(_imageFile!.path);
-    }
-
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Profile updated successfully!')),
+      const SnackBar(content: Text('Profile updated successfully and saved to Firebase!')),
     );
-    Navigator.pop(context); // Kembali ke Settings Menu (yang punya NavBar)
+    Navigator.pop(context); // Kembali ke Settings Menu
   }
 
   @override
@@ -188,7 +190,7 @@ class _EditProfileFullScreenState extends State<EditProfileFullScreen> {
         backgroundColor: Colors.transparent,
         elevation: 0,
         iconTheme: const IconThemeData(color: Colors.white),
-        title: const Text('Edit Profile', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+        title: const Text('Edit Profile & Bio', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.symmetric(horizontal: 24.0),
@@ -272,7 +274,7 @@ class _EditProfileFullScreenState extends State<EditProfileFullScreen> {
 }
 
 // =======================================================
-// C. ACCOUNT FULL SCREEN
+// C. ACCOUNT FULL SCREEN (Tempat Logout dan Change Password)
 // =======================================================
 
 class AccountFullScreen extends StatefulWidget {
@@ -286,7 +288,22 @@ class _AccountFullScreenState extends State<AccountFullScreen> {
   final TextEditingController _oldPasswordController = TextEditingController();
   final TextEditingController _newPasswordController = TextEditingController();
 
+  // --- FUNGSI LOGOUT (DIUBAH) ---
+  void _performLogout() async {
+    final userProvider = Provider.of<UserProvider>(context, listen: false);
+    await userProvider.logout();
+
+    // Kembali ke HomeAuthScreen dan hapus semua rute sebelumnya
+    Navigator.pushNamedAndRemoveUntil(
+      context,
+      AppRoutes.homeAuth, // <-- DIUBAH
+          (Route<dynamic> route) => false,
+    );
+  }
+
   void _savePassword() {
+    // Note: Change password di Firebase memerlukan re-authentication.
+    // Untuk tujuan ini, kita akan melakukan mock success.
     if (_oldPasswordController.text.isEmpty || _newPasswordController.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Please fill in both password fields.')),
@@ -294,8 +311,10 @@ class _AccountFullScreenState extends State<AccountFullScreen> {
       return;
     }
 
+    // TODO: Implementasi Firebase actual change password di sini
+
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Password changed successfully!')),
+      const SnackBar(content: Text('Password changed successfully! (Mock)')),
     );
 
     _oldPasswordController.clear();
@@ -333,7 +352,7 @@ class _AccountFullScreenState extends State<AccountFullScreen> {
         backgroundColor: Colors.transparent,
         elevation: 0,
         iconTheme: const IconThemeData(color: Colors.white),
-        title: const Text('Edit Profile', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+        title: const Text('Account & Security', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.symmetric(horizontal: 24.0),
@@ -352,11 +371,16 @@ class _AccountFullScreenState extends State<AccountFullScreen> {
             const Text('New Password', style: TextStyle(color: Colors.white70, fontSize: 16)),
             const SizedBox(height: 8),
             TextField(controller: _newPasswordController, obscureText: true, style: const TextStyle(color: Colors.white), decoration: _inputDecoration('********')),
-            const SizedBox(height: 80),
+            const SizedBox(height: 40),
 
-            // Save Button
-            CustomButton(text: 'Save', onPressed: _savePassword, backgroundColor: Colors.black, textColor: Colors.white),
+            // Save Password Button
+            CustomButton(text: 'Change Password', onPressed: _savePassword, backgroundColor: Colors.black, textColor: Colors.white),
+            const SizedBox(height: 40),
+
+            // Tombol Logout (BARU)
+            CustomButton(text: 'Logout', onPressed: _performLogout, backgroundColor: Colors.redAccent, textColor: Colors.white),
             const SizedBox(height: 20),
+
           ],
         ),
       ),
@@ -365,7 +389,7 @@ class _AccountFullScreenState extends State<AccountFullScreen> {
 }
 
 // =======================================================
-// D. UPDATES FULL SCREEN
+// D. UPDATES FULL SCREEN (Update Physical Data)
 // =======================================================
 
 class UpdatesFullScreen extends StatefulWidget {
@@ -383,6 +407,7 @@ class _UpdatesFullScreenState extends State<UpdatesFullScreen> {
   void initState() {
     super.initState();
     final userData = Provider.of<UserProvider>(context, listen: false).currentUser;
+    // Tampilkan data yang sudah ada
     _weightController.text = userData?.weight.toStringAsFixed(0) ?? '';
     _heightController.text = userData?.height.toStringAsFixed(0) ?? '';
   }
@@ -404,7 +429,7 @@ class _UpdatesFullScreenState extends State<UpdatesFullScreen> {
     );
 
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Physical data updated successfully!')),
+      const SnackBar(content: Text('Physical data updated successfully and saved to Firebase!')),
     );
 
     Navigator.pop(context);
@@ -440,7 +465,7 @@ class _UpdatesFullScreenState extends State<UpdatesFullScreen> {
         backgroundColor: Colors.transparent,
         elevation: 0,
         iconTheme: const IconThemeData(color: Colors.white),
-        title: const Text('Updates', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+        title: const Text('Update Physical Data', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
       ),
       body: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 24.0),
@@ -473,7 +498,7 @@ class _UpdatesFullScreenState extends State<UpdatesFullScreen> {
             const Spacer(),
 
             // Next/Save Button
-            CustomButton(text: 'Next', onPressed: _saveUpdates, backgroundColor: Colors.black, textColor: Colors.white),
+            CustomButton(text: 'Save Changes', onPressed: _saveUpdates, backgroundColor: Colors.black, textColor: Colors.white),
             const SizedBox(height: 16),
 
             // Back Button

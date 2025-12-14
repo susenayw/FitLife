@@ -1,7 +1,9 @@
-// lib/screens/login_screen.dart
+// lib/screens/login_screen.dart (MODIFIKASI)
 import 'package:flutter/material.dart';
-import 'personal_info_screen.dart';
+import 'package:provider/provider.dart'; // <-- BARU
+import '../providers/user_provider.dart'; // <-- BARU
 import '../widgets/custom_button.dart';
+import '../routes/app_routes.dart'; // <-- BARU
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -15,21 +17,37 @@ class _LoginScreenState extends State<LoginScreen> {
   final TextEditingController _passwordController = TextEditingController();
   bool _isPasswordVisible = false;
 
-  void _performLogin() {
+  void _performLogin() async { // <-- JADIKAN ASYNC
     final email = _emailController.text;
     final password = _passwordController.text;
 
-    if (email.isNotEmpty && password.isNotEmpty) {
-      // Navigasi ke PersonalInfoScreen (Sesuai alur yang Anda minta)
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => const PersonalInfoScreen()),
-      );
-    } else {
+    if (email.isEmpty || password.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Masukkan E-mail dan Password yang valid.')),
+        const SnackBar(content: Text('Masukkan E-mail dan Password.')),
       );
+      return;
     }
+
+    // 1. PANGGIL LOGIN VIA PROVIDER
+    final userProvider = Provider.of<UserProvider>(context, listen: false);
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Logging in...')),
+    );
+
+    // Panggil fungsi Firebase Login
+    final errorMessage = await userProvider.login(email: email, password: password);
+
+    if (errorMessage != null) {
+      // Gagal Login
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Login Gagal: $errorMessage')),
+      );
+      return;
+    }
+
+    // 2. Navigasi ke MainScreen/Dashboard setelah Login berhasil
+    Navigator.pushReplacementNamed(context, AppRoutes.mainScreen); // <-- DIUBAH
   }
 
   // Gaya input field yang seragam
