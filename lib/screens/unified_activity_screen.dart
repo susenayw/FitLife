@@ -204,39 +204,50 @@ class _UnifiedActivityScreenState extends State<UnifiedActivityScreen> {
   }
 
 
-  // --- WIDGET SELECTION VIEW (Tampilan 1) ---
+  // --- WIDGET SELECTION VIEW (Tampilan 1: Mengisi Penuh Layar) ---
   Widget _buildSelectionView() {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(30.0),
-      child: Column(
-        children: [
-          _buildWorkoutCard(
-            context,
-            title: 'Cardio',
-            icon: Icons.favorite,
-            onTap: () => _setCurrentView(ActivityView.cardioList),
+    return Column(
+      children: [
+        // TOMBOL CARDIO (Expanded)
+        Expanded(
+          child: Padding(
+            // Padding disesuaikan agar ada margin di sekitar kedua tombol
+            padding: const EdgeInsets.fromLTRB(24.0, 30.0, 24.0, 15.0),
+            child: _buildWorkoutCard(
+              context,
+              title: 'Cardio',
+              icon: Icons.favorite,
+              onTap: () => _setCurrentView(ActivityView.cardioList),
+            ),
           ),
-          const SizedBox(height: 30),
-          _buildWorkoutCard(
-            context,
-            title: 'Weight Training',
-            icon: Icons.fitness_center,
-            onTap: () => _setCurrentView(ActivityView.weightTrainingList),
+        ),
+
+        // TOMBOL WEIGHT TRAINING (Expanded)
+        Expanded(
+          child: Padding(
+            // Padding disesuaikan agar ada margin di sekitar kedua tombol
+            padding: const EdgeInsets.fromLTRB(24.0, 15.0, 24.0, 30.0),
+            child: _buildWorkoutCard(
+              context,
+              title: 'Weight Training',
+              icon: Icons.fitness_center,
+              onTap: () => _setCurrentView(ActivityView.weightTrainingList),
+            ),
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 
-  // WIDGET PEMBANTU CARD (Dari kode lama Anda)
+  // WIDGET PEMBANTU CARD (Dibuat lebih fleksibel untuk mengisi Expanded)
   Widget _buildWorkoutCard(BuildContext context, {required String title, required IconData icon, required VoidCallback onTap}) {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        height: 200,
+        // Hapus fixed height (height: 200) agar Container mengisi Expanded
         width: double.infinity,
         decoration: BoxDecoration(
-          color: const Color(0xFFFFCCCC),
+          color: const Color(0xFFFFCCCC), // Warna latar yang cerah di dalam tema gelap
           borderRadius: BorderRadius.circular(20),
           boxShadow: [
             BoxShadow(
@@ -275,8 +286,6 @@ class _UnifiedActivityScreenState extends State<UnifiedActivityScreen> {
     }
   }
 
-  // ... (Sisa kode _UnifiedActivityScreenState)
-
   @override
   Widget build(BuildContext context) {
     String title = 'Activity';
@@ -298,10 +307,10 @@ class _UnifiedActivityScreenState extends State<UnifiedActivityScreen> {
           onPressed: _onBackPress,
         ),
       ),
+      // PERBAIKAN: body cukup memanggil _buildBodyContent, karena _buildSelectionView
+      // sudah mengelola Expanded di dalamnya.
       body: SafeArea(
-        child: Expanded(
-          child: _buildBodyContent(),
-        ),
+        child: _buildBodyContent(),
       ),
     );
   }

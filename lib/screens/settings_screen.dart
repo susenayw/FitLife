@@ -517,7 +517,7 @@ class _AccountFullScreenState extends State<AccountFullScreen> {
               // Pesan khusus untuk pengguna Google
               const SizedBox(height: 40),
               const Text(
-                'Anda login menggunakan Google. Untuk alasan keamanan, silakan ubah kata sandi Anda langsung melalui Pengaturan Akun Google.',
+                "You're signed in using Google. For security reasons, please change your password directly through your Google Account Settings.",
                 style: TextStyle(color: Colors.white70, fontSize: 16, fontStyle: FontStyle.italic),
               ),
               const SizedBox(height: 40),
