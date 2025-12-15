@@ -1,4 +1,4 @@
-// lib/screens/complete_profile_screen.dart (MODIFIKASI)
+// lib/screens/complete_profile_screen.dart (KODE LENGKAP)
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:image_picker/image_picker.dart';
@@ -6,7 +6,7 @@ import 'dart:io';
 
 import '../providers/user_provider.dart';
 import '../widgets/custom_button.dart';
-import '../routes/app_routes.dart'; // <-- BARU
+import '../routes/app_routes.dart';
 
 class CompleteProfileScreen extends StatefulWidget {
   const CompleteProfileScreen({super.key});
@@ -18,17 +18,19 @@ class CompleteProfileScreen extends StatefulWidget {
 class _CompleteProfileScreenState extends State<CompleteProfileScreen> {
   final TextEditingController _bioController = TextEditingController();
 
-  File? _imageFile; // Menyimpan file gambar
+  File? _imageFile; // Menyimpan file gambar untuk preview
 
-  // --- FUNGSI Memilih Gambar ---
+  // --- FUNGSI Memilih Gambar (PATH LOKAL) ---
   Future<void> _pickImage() async {
     final pickedFile = await ImagePicker().pickImage(source: ImageSource.gallery);
+
     if (pickedFile != null) {
       setState(() {
         _imageFile = File(pickedFile.path);
-        // Simpan path lokal (mock) ke provider, yang akan disimpan ke Firestore
-        Provider.of<UserProvider>(context, listen: false).updateProfilePicturePath(_imageFile!.path);
       });
+
+      // Simpan PATH LOKAL ke Provider/Firestore
+      Provider.of<UserProvider>(context, listen: false).updateProfilePicturePath(_imageFile!.path);
     }
   }
 
@@ -36,16 +38,11 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> {
     // 1. AKSES PROVIDER
     final userProvider = Provider.of<UserProvider>(context, listen: false);
 
-    // 2. Simpan Bio (Update Provider dan otomatis ke Firestore)
+    // 2. Simpan Bio (Update Provider)
     userProvider.updateBio(_bioController.text);
 
-    // Tampilkan notifikasi
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Profile completed and saved!')),
-    );
-
     // 3. Navigasi ke Confirmation Screen
-    Navigator.pushNamed(context, AppRoutes.confirmation); // <-- DIUBAH
+    Navigator.pushReplacementNamed(context, AppRoutes.confirmation);
   }
 
   @override
@@ -90,13 +87,13 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> {
     final weight = userData?.weight.toStringAsFixed(0) ?? "0";
     final height = userData?.height.toStringAsFixed(0) ?? "0";
 
-    // Ambil path gambar untuk ditampilkan
+    // --- LOGIKA GAMBAR PATH LOKAL ---
     File? profileImageFile;
     // Prioritaskan gambar yang baru dipilih (_imageFile)
     if (_imageFile != null) {
       profileImageFile = _imageFile;
     }
-    // Jika tidak ada gambar baru, gunakan yang ada di provider (jika ada)
+    // Jika tidak ada gambar baru, gunakan yang ada di provider (jika path ada dan file eksis)
     else if (userData?.profilePicturePath != null) {
       final file = File(userData!.profilePicturePath!);
       if (file.existsSync()) {

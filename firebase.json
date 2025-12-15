@@ -1,1 +1,42 @@
-{"flutter":{"platforms":{"android":{"default":{"projectId":"fitlife-fb7e9","appId":"1:152698817266:android:43f86384554ff272555e6b","fileOutput":"android/app/google-services.json"}},"dart":{"lib/firebase_options.dart":{"projectId":"fitlife-fb7e9","configurations":{"android":"1:152698817266:android:43f86384554ff272555e6b","ios":"1:152698817266:ios:4e68813f1a6df6f9555e6b","macos":"1:152698817266:ios:4e68813f1a6df6f9555e6b","web":"1:152698817266:web:2994f445d5e6528d555e6b","windows":"1:152698817266:web:c2f983fb3a966acc555e6b"}}}}}}
+{
+  "flutter": {
+    "platforms": {
+      "android": {
+        "default": {
+          "projectId": "fitlife-fb7e9",
+          "appId": "1:152698817266:android:43f86384554ff272555e6b",
+          "fileOutput": "android/app/google-services.json"
+        }
+      },
+      "dart": {
+        "lib/firebase_options.dart": {
+          "projectId": "fitlife-fb7e9",
+          "configurations": {
+            "android": "1:152698817266:android:43f86384554ff272555e6b",
+            "ios": "1:152698817266:ios:4e68813f1a6df6f9555e6b",
+            "macos": "1:152698817266:ios:4e68813f1a6df6f9555e6b",
+            "web": "1:152698817266:web:2994f445d5e6528d555e6b",
+            "windows": "1:152698817266:web:c2f983fb3a966acc555e6b"
+          }
+        }
+      }
+    }
+  },
+  "functions": [
+    {
+      "source": "functions",
+      "codebase": "default",
+      "disallowLegacyRuntimeConfig": true,
+      "ignore": [
+        "node_modules",
+        ".git",
+        "firebase-debug.log",
+        "firebase-debug.*.log",
+        "*.local"
+      ],
+      "predeploy": [
+        "npm --prefix \"$RESOURCE_DIR\" run lint"
+      ]
+    }
+  ]
+}

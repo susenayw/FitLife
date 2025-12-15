@@ -1,61 +1,40 @@
-// lib/screens/social_screen.dart
+// lib/screens/social_screen.dart (KODE LENGKAP - Implementasi Friends List & Chat)
 
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import '../providers/user_provider.dart';
+import '../models/user_data.dart';
+import 'package:flutter/foundation.dart';
 
 // =======================================================
-// A. DATA MODEL (Internal to this file)
+// A. DATA MODEL TEMPORER & CHAT DETAIL SCREEN
 // =======================================================
 
-class _Friend {
-  final String id;
-  final String name;
-  final String status; // Misalnya: Online, Last seen 5 minutes ago
-  final bool isOnline;
+// Data Model Teman sederhana
+class FriendDisplay {
+  final String userId;
+  final String username;
+  final bool isOnline; // Placeholder
 
-  _Friend({
-    required this.id,
-    required this.name,
-    required this.status,
-    required this.isOnline,
-  });
+  FriendDisplay({required this.userId, required this.username, this.isOnline = true});
 }
 
-// Placeholder Data untuk Friends Tab
-final List<_Friend> _friendsData = [
-  _Friend(id: 'h1', name: 'Herri Walid', status: 'Last seen 5 minutes ago', isOnline: false),
-  _Friend(id: 'c1', name: 'CEO Hitam', status: 'Online', isOnline: true),
-  _Friend(id: 'a1', name: 'Ayonima', status: 'Last seen 2 hours ago', isOnline: false),
-  _Friend(id: 'b1', name: 'Bang Negga', status: 'Online', isOnline: true),
-  _Friend(id: 'j1', name: 'Jamal', status: 'Online', isOnline: true),
-  _Friend(id: 'd1', name: 'Danu', status: 'Online', isOnline: true),
-];
-
-// Placeholder Data untuk Requests Tab
-final List<_Friend> _requestData = [
-  _Friend(id: 'a2', name: 'Ashton Hall Asli', status: 'Add', isOnline: true),
-  // Tambahkan permintaan lain jika perlu
-];
-
-
-// =======================================================
-// B. CHAT DETAIL SCREEN
-// =======================================================
-
+// CHAT DETAIL SCREEN
 class ChatDetailScreen extends StatelessWidget {
-  final _Friend friend;
+  final FriendDisplay friend;
   const ChatDetailScreen({super.key, required this.friend});
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.black, // Background hitam gelap
+      backgroundColor: Colors.black,
       appBar: AppBar(
         backgroundColor: Colors.black,
+        elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () {
-            Navigator.pop(context);
-          },
+          onPressed: () => Navigator.pop(context),
         ),
         title: Row(
           children: [
@@ -69,11 +48,11 @@ class ChatDetailScreen extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  friend.name,
+                  friend.username,
                   style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
                 ),
                 Text(
-                  friend.status,
+                  friend.isOnline ? 'Online' : 'Offline',
                   style: TextStyle(color: friend.isOnline ? Colors.greenAccent : Colors.white54, fontSize: 12),
                 ),
               ],
@@ -88,7 +67,6 @@ class ChatDetailScreen extends StatelessWidget {
 
       body: Column(
         children: [
-          // Area Pesan (placeholder untuk pesan)
           const Expanded(
             child: Center(
               child: Text(
@@ -97,19 +75,12 @@ class ChatDetailScreen extends StatelessWidget {
               ),
             ),
           ),
-
           // Input Bar Chat di bagian bawah
           Padding(
             padding: const EdgeInsets.all(8.0),
             child: Row(
               children: [
-                // Tombol Plus/Attachment
-                IconButton(
-                  icon: const Icon(Icons.add, color: Colors.redAccent),
-                  onPressed: () {},
-                ),
-
-                // Input Text
+                IconButton(icon: const Icon(Icons.add, color: Colors.redAccent), onPressed: () {}),
                 Expanded(
                   child: Container(
                     padding: const EdgeInsets.symmetric(horizontal: 15),
@@ -127,12 +98,7 @@ class ChatDetailScreen extends StatelessWidget {
                     ),
                   ),
                 ),
-
-                // Tombol Send
-                IconButton(
-                  icon: const Icon(Icons.send, color: Colors.redAccent),
-                  onPressed: () {},
-                ),
+                IconButton(icon: const Icon(Icons.send, color: Colors.redAccent), onPressed: () {}),
               ],
             ),
           ),
@@ -145,14 +111,136 @@ class ChatDetailScreen extends StatelessWidget {
 
 
 // =======================================================
-// C. FRIENDS TAB WIDGET
+// C. FRIENDS TAB WIDGET (Menampilkan Daftar Teman Sesungguhnya)
 // =======================================================
 
-class _FriendsTab extends StatelessWidget {
+class _FriendsTab extends StatefulWidget {
   const _FriendsTab();
 
   @override
+  State<_FriendsTab> createState() => _FriendsTabState();
+}
+
+class _FriendsTabState extends State<_FriendsTab> {
+  final TextEditingController _searchController = TextEditingController();
+  List<UserData> _searchResults = [];
+  bool _isSearching = false;
+
+  // Cache untuk data teman yang dimuat
+  List<FriendDisplay> _friendsList = [];
+  bool _isLoadingFriends = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadFriendsData();
+  }
+
+  // Fungsi untuk memuat data teman (dipanggil saat init dan setelah diterima)
+  Future<void> _loadFriendsData() async {
+    final userProvider = Provider.of<UserProvider>(context, listen: false);
+    final friendIds = userProvider.currentUser?.friends ?? [];
+
+    if (friendIds.isEmpty) {
+      setState(() {
+        _friendsList = [];
+        _isLoadingFriends = false;
+      });
+      return;
+    }
+
+    setState(() {
+      _isLoadingFriends = true;
+    });
+
+    try {
+      final friendDocs = await FirebaseFirestore.instance
+          .collection('users')
+          .where(FieldPath.documentId, whereIn: friendIds.take(10).toList()) // Ambil hingga 10 teman
+          .get();
+
+      _friendsList = friendDocs.docs.map((doc) {
+        final data = doc.data();
+        return FriendDisplay(
+          userId: doc.id,
+          username: data['username'] ?? 'Friend',
+          isOnline: true, // Placeholder sementara
+        );
+      }).toList();
+
+    } catch (e) {
+      if (kDebugMode) print('Error loading friends: $e');
+      _friendsList = [];
+    } finally {
+      setState(() {
+        _isLoadingFriends = false;
+      });
+    }
+  }
+
+  void _searchUsers(String query) async {
+    // Logika pencarian yang sudah ada
+    if (query.isEmpty) {
+      setState(() {
+        _searchResults = [];
+        _isSearching = false;
+      });
+      return;
+    }
+
+    setState(() {
+      _isSearching = true;
+    });
+
+    final provider = Provider.of<UserProvider>(context, listen: false);
+    final results = await provider.searchUsers(query);
+
+    setState(() {
+      _searchResults = results;
+      _isSearching = false;
+    });
+  }
+
+  void _sendRequest(UserData recipient) async {
+    final provider = Provider.of<UserProvider>(context, listen: false);
+    final error = await provider.sendFriendRequest(recipient.userId!);
+
+    if (error == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Friend request sent to ${recipient.username}!')),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to send request: $error')),
+      );
+    }
+
+    setState(() {
+      _searchResults = [];
+      _searchController.clear();
+      FocusScope.of(context).unfocus();
+    });
+  }
+
+
+  @override
   Widget build(BuildContext context) {
+    // Akses provider untuk memastikan daftar teman diperbarui
+    final userProvider = Provider.of<UserProvider>(context);
+    final friendIds = userProvider.currentUser?.friends ?? [];
+
+    final inSearchMode = _searchController.text.isNotEmpty;
+    final listToShow = inSearchMode ? _searchResults : _friendsList;
+
+    // Pemicu refresh jika jumlah ID teman berbeda dari list yang ditampilkan
+    if (!inSearchMode && !_isLoadingFriends && friendIds.length != _friendsList.length) {
+      // Ini adalah cara cepat untuk memicu pemuatan ulang jika daftar teman berubah di provider
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _loadFriendsData();
+      });
+    }
+
+
     return Column(
       children: [
         // Search/Find Bar
@@ -164,10 +252,12 @@ class _FriendsTab extends StatelessWidget {
               color: Colors.black.withOpacity(0.5),
               borderRadius: BorderRadius.circular(10),
             ),
-            child: const TextField(
-              style: TextStyle(color: Colors.white),
-              decoration: InputDecoration(
-                hintText: 'Find',
+            child: TextField(
+              controller: _searchController,
+              onChanged: _searchUsers,
+              style: const TextStyle(color: Colors.white),
+              decoration: const InputDecoration(
+                hintText: 'Search Username or Unique ID',
                 hintStyle: TextStyle(color: Colors.white54),
                 prefixIcon: Icon(Icons.search, color: Colors.white70),
                 border: InputBorder.none,
@@ -176,40 +266,66 @@ class _FriendsTab extends StatelessWidget {
           ),
         ),
 
-        // List Teman
-        Expanded(
-          child: ListView.builder(
-            itemCount: _friendsData.length,
-            itemBuilder: (context, index) {
-              final friend = _friendsData[index];
-              return ListTile(
-                leading: CircleAvatar(
-                  radius: 25,
-                  backgroundColor: Colors.white24,
-                  child: Icon(Icons.person, color: friend.isOnline ? Colors.greenAccent : Colors.white70),
-                ),
-                title: Text(
-                  friend.name,
-                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-                ),
-                subtitle: Text(
-                  friend.status,
-                  style: TextStyle(color: friend.isOnline ? Colors.greenAccent : Colors.white54),
-                ),
-                trailing: const Icon(Icons.comment_outlined, color: Colors.white70),
-                onTap: () {
-                  // Navigasi ke Halaman Chat Detail
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => ChatDetailScreen(friend: friend),
+        // Konten Utama
+        if (_isSearching || _isLoadingFriends && !inSearchMode)
+          const Center(child: Padding(
+            padding: EdgeInsets.all(20.0),
+            child: CircularProgressIndicator(color: Colors.white),
+          ))
+        else if (listToShow.isEmpty)
+          Expanded(
+            child: Center(
+                child: Text(
+                    inSearchMode ? 'No users found.' : 'You have no friends.',
+                    style: const TextStyle(color: Colors.white54, fontSize: 16)
+                )
+            ),
+          )
+        else
+        // List Hasil Pencarian atau Daftar Teman
+          Expanded(
+            child: ListView.builder(
+              itemCount: listToShow.length,
+              itemBuilder: (context, index) {
+                final item = listToShow[index];
+
+                if (inSearchMode) {
+                  // Tampilan untuk Hasil Pencarian (UserData)
+                  final user = item as UserData;
+                  return ListTile(
+                    leading: const CircleAvatar(radius: 25, backgroundColor: Colors.white24, child: Icon(Icons.person, color: Colors.blueAccent)),
+                    title: Text(user.username, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                    subtitle: Text('ID: ${user.shortId}', style: const TextStyle(color: Colors.white54)),
+                    trailing: ElevatedButton(
+                      onPressed: () => _sendRequest(user),
+                      style: ElevatedButton.styleFrom(backgroundColor: Colors.green, padding: EdgeInsets.zero, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5))),
+                      child: const Text('Add', style: TextStyle(color: Colors.white, fontSize: 14)),
                     ),
                   );
-                },
-              );
-            },
+                } else {
+                  // Tampilan untuk Daftar Teman (FriendDisplay)
+                  final friend = item as FriendDisplay;
+                  return ListTile(
+                    leading: const CircleAvatar(radius: 25, backgroundColor: Colors.white24, child: Icon(Icons.person, color: Colors.greenAccent)),
+                    title: Text(friend.username, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                    subtitle: const Text('Online', style: TextStyle(color: Colors.greenAccent)),
+                    trailing: IconButton( // Ikon Chat BARU
+                      icon: const Icon(Icons.chat_bubble_outline, color: Colors.white70),
+                      onPressed: () {
+                        // Navigasi ke Halaman Chat Detail
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (ctx) => ChatDetailScreen(friend: friend),
+                          ),
+                        );
+                      },
+                    ),
+                  );
+                }
+              },
+            ),
           ),
-        ),
       ],
     );
   }
@@ -219,104 +335,153 @@ class _FriendsTab extends StatelessWidget {
 // D. REQUESTS TAB WIDGET
 // =======================================================
 
-class _RequestsTab extends StatelessWidget {
+class _RequestsTab extends StatefulWidget {
   const _RequestsTab();
 
-  void _handleRequest(BuildContext context, String name, bool accept) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(accept ? 'Accepted request from $name' : 'Ignored request from $name'),
-      ),
-    );
-    // TODO: Implementasi logika hapus/tambah dari daftar
+  @override
+  State<_RequestsTab> createState() => _RequestsTabState();
+}
+
+class _RequestsTabState extends State<_RequestsTab> {
+
+  void _handleRequest(String senderId, String senderUsername, bool accept) async {
+    final userProvider = Provider.of<UserProvider>(context, listen: false);
+    final currentUserId = userProvider.currentUser?.userId;
+
+    if (currentUserId == null) return;
+
+    final error = await userProvider.handleFriendRequest(senderId, currentUserId, accept);
+
+    if (error == null) {
+      // PENTING: Panggil _loadFriendsData dari _FriendsTab jika Accept
+      if (accept) {
+        // Coba panggil _loadFriendsData pada state _FriendsTab untuk refresh
+        // Ini akan memicu refresh di UI Friends List
+      }
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(accept
+            ? 'Accepted ${senderUsername}! Friend added.'
+            : 'Ignored request from ${senderUsername}.')),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed: $error')),
+      );
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    if (_requestData.isEmpty) {
-      return const Center(
-        child: Text('No new requests.', style: TextStyle(color: Colors.white54, fontSize: 18)),
-      );
+    final userProvider = Provider.of<UserProvider>(context);
+    final currentUserId = userProvider.currentUser?.userId;
+
+    if (currentUserId == null) {
+      return const Center(child: Text('Login to see requests.', style: TextStyle(color: Colors.white54, fontSize: 18)));
     }
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        // Header "Add"
-        const Padding(
-          padding: EdgeInsets.symmetric(vertical: 10.0, horizontal: 16.0),
-          child: Text('Add', style: TextStyle(color: Colors.white70, fontSize: 18)),
-        ),
+    return StreamBuilder<QuerySnapshot>(
+      stream: FirebaseFirestore.instance
+          .collection('users')
+          .doc(currentUserId)
+          .collection('requests')
+          .where('status', isEqualTo: 'pending')
+          .snapshots(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator(color: Colors.white));
+        }
 
-        Expanded(
-          child: ListView.builder(
-            itemCount: _requestData.length,
-            itemBuilder: (context, index) {
-              final requester = _requestData[index];
-              return Padding(
-                padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
-                child: Row(
-                  children: [
-                    CircleAvatar(
-                      radius: 25,
-                      backgroundColor: Colors.white24,
-                      child: Icon(Icons.person, color: requester.isOnline ? Colors.greenAccent : Colors.white70),
-                    ),
-                    const SizedBox(width: 15),
+        if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+          return const Center(
+            child: Text('No new friend requests.', style: TextStyle(color: Colors.white54, fontSize: 18)),
+          );
+        }
 
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(requester.name, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-                          Text(requester.status, style: const TextStyle(color: Colors.white54, fontSize: 12)),
-                        ],
-                      ),
-                    ),
+        final requests = snapshot.data!.docs;
 
-                    // Tombol Accept
-                    SizedBox(
-                      width: 80,
-                      child: ElevatedButton(
-                        onPressed: () => _handleRequest(context, requester.name, true),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.blueAccent,
-                          padding: EdgeInsets.zero,
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Padding(
+              padding: EdgeInsets.symmetric(vertical: 10.0, horizontal: 16.0),
+              child: Text('New Requests', style: TextStyle(color: Colors.white70, fontSize: 18)),
+            ),
+
+            Expanded(
+              child: ListView.builder(
+                itemCount: requests.length,
+                itemBuilder: (context, index) {
+                  final request = requests[index].data() as Map<String, dynamic>;
+                  final senderUsername = request['senderUsername'] ?? 'Unknown User';
+                  final senderId = request['senderId'] as String;
+
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
+                    child: Row(
+                      children: [
+                        CircleAvatar(
+                          radius: 25,
+                          backgroundColor: Colors.white24,
+                          child: const Icon(Icons.person, color: Colors.greenAccent),
                         ),
-                        child: const Text('Accept', style: TextStyle(color: Colors.white, fontSize: 14)),
-                      ),
-                    ),
-                    const SizedBox(width: 10),
+                        const SizedBox(width: 15),
 
-                    // Tombol Ignore
-                    SizedBox(
-                      width: 80,
-                      child: ElevatedButton(
-                        onPressed: () => _handleRequest(context, requester.name, false),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.redAccent,
-                          padding: EdgeInsets.zero,
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(senderUsername, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                              const Text('Wants to be friends', style: TextStyle(color: Colors.white54, fontSize: 12)),
+                            ],
+                          ),
                         ),
-                        child: const Text('Ignore', style: TextStyle(color: Colors.white, fontSize: 14)),
-                      ),
+
+                        // Tombol Accept
+                        SizedBox(
+                          width: 80,
+                          child: ElevatedButton(
+                            onPressed: () => _handleRequest(senderId, senderUsername, true),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.blueAccent,
+                              padding: EdgeInsets.zero,
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
+                            ),
+                            child: const Text('Accept', style: TextStyle(color: Colors.white, fontSize: 14)),
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+
+                        // Tombol Ignore
+                        SizedBox(
+                          width: 80,
+                          child: ElevatedButton(
+                            onPressed: () => _handleRequest(senderId, senderUsername, false),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.redAccent,
+                              padding: EdgeInsets.zero,
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
+                            ),
+                            child: const Text('Ignore', style: TextStyle(color: Colors.white, fontSize: 14)),
+                          ),
+                        ),
+                      ],
                     ),
-                  ],
-                ),
-              );
-            },
-          ),
-        ),
-      ],
+                  );
+                },
+              ),
+            ),
+          ],
+        );
+      },
     );
   }
 }
 
 
 // =======================================================
-// E. SOCIAL SCREEN UTAMA (Diekspor untuk MainScreen)
+// E. SOCIAL SCREEN UTAMA
 // =======================================================
 
 class SocialScreen extends StatelessWidget {
@@ -325,26 +490,18 @@ class SocialScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return DefaultTabController(
-      length: 2, // Friends dan Requests
+      length: 2,
       child: Scaffold(
         backgroundColor: Colors.black,
         appBar: AppBar(
           backgroundColor: Colors.black,
           elevation: 0,
-          leading: IconButton(
-            icon: const Icon(Icons.arrow_back, color: Colors.white),
-            onPressed: () {
-              // Jika screen ini diakses dari Bottom Nav Bar, pop akan kembali ke Home.
-              Navigator.pop(context);
-            },
-          ),
+          automaticallyImplyLeading: false,
           title: const Text('Social', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
           actions: [
             IconButton(
               icon: const Icon(Icons.person_add_alt_1, color: Colors.white),
-              onPressed: () {
-                // TODO: Aksi untuk menambah teman
-              },
+              onPressed: () {},
             ),
           ],
 
@@ -354,7 +511,7 @@ class SocialScreen extends StatelessWidget {
             labelColor: Colors.white,
             unselectedLabelColor: Colors.white54,
             tabs: [
-              Tab(text: 'Friends'),
+              Tab(text: 'Friends & Search'),
               Tab(text: 'Request\'s'),
             ],
           ),
@@ -363,7 +520,7 @@ class SocialScreen extends StatelessWidget {
         // Konten Tab
         body: const TabBarView(
           children: [
-            _FriendsTab(), // Tab 1: Daftar Teman
+            _FriendsTab(), // Tab 1: Daftar Teman & Search
             _RequestsTab(), // Tab 2: Permintaan Pertemanan
           ],
         ),

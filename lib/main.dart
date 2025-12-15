@@ -7,10 +7,9 @@ import 'package:firebase_auth/firebase_auth.dart';
 
 // Import Screens, Providers, dan Routes
 import 'package:fitlifeapp/providers/user_provider.dart';
-import 'package:fitlifeapp/routes/app_routes.dart'; // <-- Diperlukan
+import 'package:fitlifeapp/routes/app_routes.dart';
 
-void main() async { // <-- INI ADALAH FUNGSI MAIN UTAMA
-  // PENTING: Memastikan widget binding diinisialisasi
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   // INISIALISASI FIREBASE
@@ -66,7 +65,7 @@ class FitLifeApp extends StatelessWidget {
       initialRoute: AppRoutes.homeAuth,
       routes: routes,
 
-      // AUTHENTICATION GATE (Menggunakan Builder untuk Stream)
+      // AUTHENTICATION GATE
       builder: (context, child) {
         return StreamBuilder<User?>(
           stream: FirebaseAuth.instance.authStateChanges(),
@@ -82,7 +81,7 @@ class FitLifeApp extends StatelessWidget {
             // Jika sudah login, paksa navigasi ke MainScreen
             if (snapshot.hasData && snapshot.data != null) {
               WidgetsBinding.instance.addPostFrameCallback((_) {
-                // Memuat data pengguna dari Firestore (MENGGUNAKAN FUNGSI PUBLIK)
+                // Memuat data pengguna dan workout dari Firestore (FUNGSI PUBLIK)
                 Provider.of<UserProvider>(context, listen: false).fetchUserDataFromFirestore(snapshot.data!.uid);
 
                 // Navigasi ke MainScreen jika rute saat ini bukan MainScreen
