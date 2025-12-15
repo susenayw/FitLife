@@ -1,9 +1,8 @@
-// lib/screens/confirmation_screen.dart (MODIFIKASI)
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/user_provider.dart';
 import '../widgets/custom_button.dart';
-import '../routes/app_routes.dart'; // <-- BARU
+import '../routes/app_routes.dart';
 import 'dart:io';
 
 class ConfirmationScreen extends StatelessWidget {
@@ -11,13 +10,13 @@ class ConfirmationScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Hitung tinggi konten untuk tata letak sticky bottom
+    // Calculate content height for sticky bottom layout
     final screenHeight = MediaQuery.of(context).size.height;
     final paddingTop = MediaQuery.of(context).padding.top;
     final paddingBottom = MediaQuery.of(context).padding.bottom;
     final contentHeight = screenHeight - paddingTop - paddingBottom;
 
-    // Kita gunakan Consumer untuk rebuild hanya bagian yang menggunakan provider
+    // Use Consumer to rebuild only the section that uses the provider
     return Consumer<UserProvider>(
       builder: (context, userProvider, child) {
         final username = userProvider.currentUser?.username ?? "FitLife User";
@@ -26,7 +25,7 @@ class ConfirmationScreen extends StatelessWidget {
         return Scaffold(
           body: Stack(
             children: [
-              // Background (Menggunakan warna solid merah tua)
+              // Background (Using solid dark red color)
               Positioned.fill(
                 child: Container(color: const Color(0xFF640A0A)),
               ),
@@ -38,21 +37,21 @@ class ConfirmationScreen extends StatelessWidget {
                     child: Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 24.0),
                       child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center, // Pusatkan konten utama
+                        mainAxisAlignment: MainAxisAlignment.center, // Center the main content
                         crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
-                          // Judul di Atas
+                          // Top Header
                           const Text(
                               'FitLife',
                               style: TextStyle(fontSize: 48, fontWeight: FontWeight.bold, color: Colors.white)
                           ),
                           const SizedBox(height: 50),
 
-                          // AREA FOTO PROFIL
+                          // PROFILE PHOTO AREA
                           CircleAvatar(
                             radius: 80,
                             backgroundColor: Colors.white,
-                            // Menentukan sumber gambar: File (jika ada) atau placeholder
+                            // Determine image source: File (if exists) or placeholder
                             backgroundImage: imagePath != null && File(imagePath).existsSync()
                                 ? FileImage(File(imagePath))
                                 : null,
@@ -61,10 +60,9 @@ class ConfirmationScreen extends StatelessWidget {
                                 : null,
                           ),
 
-                          // Tambahkan teks di bawah foto
                           const SizedBox(height: 50),
 
-                          // TEKS SAMBUTAN
+                          // WELCOME TEXT
                           Text(
                             'Welcome “$username”',
                             style: const TextStyle(
@@ -87,22 +85,22 @@ class ConfirmationScreen extends StatelessWidget {
                             textAlign: TextAlign.center,
                           ),
 
-                          // SPACER: Mendorong tombol ke bawah
+                          // SPACER: Pushes buttons to the bottom
                           const Spacer(),
 
-                          // Tombol Proceed (Mengarah ke Dashboard)
+                          // Proceed Button (Navigates to Dashboard)
                           CustomButton(
                             text: 'Proceed',
                             onPressed: () {
-                              // NAVIGASI AKHIR: Masuk ke MainScreen/Dashboard
-                              Navigator.pushReplacementNamed(context, AppRoutes.mainScreen); // <-- DIUBAH
+                              // FINAL NAVIGATION: Enter MainScreen/Dashboard
+                              Navigator.pushReplacementNamed(context, AppRoutes.mainScreen);
                             },
                             backgroundColor: Colors.black.withOpacity(0.9),
                             textColor: Colors.white,
                           ),
                           const SizedBox(height: 16),
 
-                          // Tombol Back (Kembali ke CompleteProfileScreen)
+                          // Back Button (Go back to CompleteProfileScreen)
                           Center(
                             child: TextButton(
                               onPressed: () {
@@ -117,7 +115,7 @@ class ConfirmationScreen extends StatelessWidget {
 
                           // Footer
                           const Text(
-                            '© 2025 Kapal Lawd Cabang',
+                            '© 2025 Kapal Lawd Cabang', // Branding
                             style: TextStyle(fontSize: 12, color: Colors.white54),
                           ),
                           const SizedBox(height: 8),

@@ -1,32 +1,30 @@
-// lib/screens/social_screen.dart (KODE LENGKAP - Implementasi Friends List & Chat)
-
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../providers/user_provider.dart';
 import '../models/user_data.dart';
 import 'package:flutter/foundation.dart';
-// Import ChatProvider yang baru
+// Import ChatProvider
 import '../providers/chat_provider.dart';
 
 
 // =======================================================
-// A. DATA MODEL TEMPORER & CHAT DETAIL SCREEN
+// A. TEMPORARY DATA MODEL & CHAT DETAIL SCREEN
 // =======================================================
 
-// Data Model Teman sederhana
+// Simple Friend Data Model
 class FriendDisplay {
   final String userId;
   final String username;
-  final bool isOnline; // Placeholder
+  final bool isOnline; // Placeholder for status
 
   FriendDisplay({required this.userId, required this.username, this.isOnline = true});
 }
 
-// CHAT DETAIL SCREEN BARU
+// NEW CHAT DETAIL SCREEN
 class ChatDetailScreen extends StatefulWidget {
   final FriendDisplay friend;
-  final String currentUserId; // ID pengguna saat ini
+  final String currentUserId; // Current user's ID
 
   const ChatDetailScreen({
     super.key,
@@ -45,7 +43,7 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
     if (_messageController.text.isNotEmpty) {
       final content = _messageController.text;
 
-      // Panggil ChatProvider untuk mengirim pesan
+      // Call ChatProvider to send the message
       await Provider.of<ChatProvider>(context, listen: false).sendMessage(
         recipientId: widget.friend.userId,
         content: content,
@@ -103,7 +101,7 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
 
       body: Column(
         children: [
-          // Bagian untuk menampilkan pesan
+          // Section for displaying messages
           Expanded(
             child: Consumer<ChatProvider>(
               builder: (context, chatProvider, child) {
@@ -122,7 +120,7 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
                     final messages = snapshot.data!.docs;
 
                     return ListView.builder(
-                      reverse: true, // Pesan terbaru di bawah
+                      reverse: true, // Latest message at the bottom
                       itemCount: messages.length,
                       itemBuilder: (context, index) {
                         final message = messages[index].data() as Map<String, dynamic>;
@@ -156,7 +154,7 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
             ),
           ),
 
-          // Input Bar Chat di bagian bawah
+          // Chat Input Bar at the bottom
           Padding(
             padding: const EdgeInsets.all(8.0),
             child: Row(
@@ -170,20 +168,20 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: TextField(
-                      controller: _messageController, // Tambahkan controller
+                      controller: _messageController,
                       style: const TextStyle(color: Colors.white),
                       decoration: const InputDecoration(
                         hintText: 'Type your message...',
                         hintStyle: TextStyle(color: Colors.white54),
                         border: InputBorder.none,
                       ),
-                      onSubmitted: (_) => _sendMessage(), // Kirim saat Enter
+                      onSubmitted: (_) => _sendMessage(), // Send on Enter
                     ),
                   ),
                 ),
                 IconButton(
                   icon: const Icon(Icons.send, color: Colors.redAccent),
-                  onPressed: _sendMessage, // Panggil fungsi kirim
+                  onPressed: _sendMessage, // Call send function
                 ),
               ],
             ),
@@ -197,7 +195,7 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
 
 
 // =======================================================
-// C. FRIENDS TAB WIDGET (Menampilkan Daftar Teman Sesungguhnya)
+// C. FRIENDS TAB WIDGET (Displays the actual Friends List)
 // =======================================================
 
 class _FriendsTab extends StatefulWidget {
@@ -212,7 +210,7 @@ class _FriendsTabState extends State<_FriendsTab> {
   List<UserData> _searchResults = [];
   bool _isSearching = false;
 
-  // Cache untuk data teman yang dimuat
+  // Cache for loaded friend data
   List<FriendDisplay> _friendsList = [];
   bool _isLoadingFriends = false;
 
@@ -222,7 +220,7 @@ class _FriendsTabState extends State<_FriendsTab> {
     _loadFriendsData();
   }
 
-  // Fungsi untuk memuat data teman (dipanggil saat init dan setelah diterima)
+  // Function to load friend data (called on init and after acceptance)
   Future<void> _loadFriendsData() async {
     final userProvider = Provider.of<UserProvider>(context, listen: false);
     final friendIds = userProvider.currentUser?.friends ?? [];
@@ -240,9 +238,10 @@ class _FriendsTabState extends State<_FriendsTab> {
     });
 
     try {
+      // Fetch user documents for the friend IDs
       final friendDocs = await FirebaseFirestore.instance
           .collection('users')
-          .where(FieldPath.documentId, whereIn: friendIds.take(10).toList()) // Ambil hingga 10 teman
+          .where(FieldPath.documentId, whereIn: friendIds.take(10).toList()) // Fetch up to 10 friends
           .get();
 
       _friendsList = friendDocs.docs.map((doc) {
@@ -250,7 +249,7 @@ class _FriendsTabState extends State<_FriendsTab> {
         return FriendDisplay(
           userId: doc.id,
           username: data['username'] ?? 'Friend',
-          isOnline: true, // Placeholder sementara
+          isOnline: true, // Temporary placeholder
         );
       }).toList();
 
@@ -265,7 +264,7 @@ class _FriendsTabState extends State<_FriendsTab> {
   }
 
   void _searchUsers(String query) async {
-    // Logika pencarian yang sudah ada
+    // Existing search logic
     if (query.isEmpty) {
       setState(() {
         _searchResults = [];
@@ -311,16 +310,16 @@ class _FriendsTabState extends State<_FriendsTab> {
 
   @override
   Widget build(BuildContext context) {
-    // Akses provider untuk memastikan daftar teman diperbarui
+    // Access provider to ensure friend list is updated
     final userProvider = Provider.of<UserProvider>(context);
     final friendIds = userProvider.currentUser?.friends ?? [];
 
     final inSearchMode = _searchController.text.isNotEmpty;
     final listToShow = inSearchMode ? _searchResults : _friendsList;
 
-    // Pemicu refresh jika jumlah ID teman berbeda dari list yang ditampilkan
+    // Trigger reload if the number of friend IDs differs from the displayed list
     if (!inSearchMode && !_isLoadingFriends && friendIds.length != _friendsList.length) {
-      // Ini adalah cara cepat untuk memicu pemuatan ulang jika daftar teman berubah di provider
+      // This is a quick way to trigger reload if the friend list changes in the provider
       WidgetsBinding.instance.addPostFrameCallback((_) {
         _loadFriendsData();
       });
@@ -352,7 +351,7 @@ class _FriendsTabState extends State<_FriendsTab> {
           ),
         ),
 
-        // Konten Utama
+        // Main Content
         if (_isSearching || _isLoadingFriends && !inSearchMode)
           const Center(child: Padding(
             padding: EdgeInsets.all(20.0),
@@ -368,7 +367,7 @@ class _FriendsTabState extends State<_FriendsTab> {
             ),
           )
         else
-        // List Hasil Pencarian atau Daftar Teman
+        // List of Search Results or Friends List
           Expanded(
             child: ListView.builder(
               itemCount: listToShow.length,
@@ -377,7 +376,7 @@ class _FriendsTabState extends State<_FriendsTab> {
                 final currentUserId = userProvider.currentUser?.userId;
 
                 if (inSearchMode) {
-                  // Tampilan untuk Hasil Pencarian (UserData)
+                  // Display for Search Results (UserData)
                   final user = item as UserData;
                   return ListTile(
                     leading: const CircleAvatar(radius: 25, backgroundColor: Colors.white24, child: Icon(Icons.person, color: Colors.blueAccent)),
@@ -390,16 +389,16 @@ class _FriendsTabState extends State<_FriendsTab> {
                     ),
                   );
                 } else {
-                  // Tampilan untuk Daftar Teman (FriendDisplay)
+                  // Display for Friends List (FriendDisplay)
                   final friend = item as FriendDisplay;
                   return ListTile(
                     leading: const CircleAvatar(radius: 25, backgroundColor: Colors.white24, child: Icon(Icons.person, color: Colors.greenAccent)),
                     title: Text(friend.username, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
                     subtitle: const Text('Online', style: TextStyle(color: Colors.greenAccent)),
-                    trailing: IconButton( // Ikon Chat BARU
+                    trailing: IconButton( // New Chat Icon
                       icon: const Icon(Icons.chat_bubble_outline, color: Colors.white70),
                       onPressed: () {
-                        // Navigasi ke Halaman Chat Detail
+                        // Navigate to Chat Detail Page
                         if (currentUserId == null) return;
 
                         Navigator.push(
@@ -445,10 +444,10 @@ class _RequestsTabState extends State<_RequestsTab> {
     final error = await userProvider.handleFriendRequest(senderId, currentUserId, accept);
 
     if (error == null) {
-      // PENTING: Panggil _loadFriendsData dari _FriendsTab jika Accept
+      // NOTE: Call _loadFriendsData from _FriendsTab if Accept is true
       if (accept) {
-        // Coba panggil _loadFriendsData pada state _FriendsTab untuk refresh
-        // Ini akan memicu refresh di UI Friends List
+        // This logic is currently not easily callable across tabs without a parent state or global listener,
+        // but the database update will trigger the provider and eventually refresh the FriendsTab state.
       }
 
       ScaffoldMessenger.of(context).showSnackBar(
@@ -472,6 +471,7 @@ class _RequestsTabState extends State<_RequestsTab> {
       return const Center(child: Text('Login to see requests.', style: TextStyle(color: Colors.white54, fontSize: 18)));
     }
 
+    // Stream requests from Firestore for the current user
     return StreamBuilder<QuerySnapshot>(
       stream: FirebaseFirestore.instance
           .collection('users')
@@ -530,7 +530,7 @@ class _RequestsTabState extends State<_RequestsTab> {
                           ),
                         ),
 
-                        // Tombol Accept
+                        // Accept Button
                         SizedBox(
                           width: 80,
                           child: ElevatedButton(
@@ -545,7 +545,7 @@ class _RequestsTabState extends State<_RequestsTab> {
                         ),
                         const SizedBox(width: 10),
 
-                        // Tombol Ignore
+                        // Ignore Button
                         SizedBox(
                           width: 80,
                           child: ElevatedButton(
@@ -573,7 +573,7 @@ class _RequestsTabState extends State<_RequestsTab> {
 
 
 // =======================================================
-// E. SOCIAL SCREEN UTAMA
+// E. MAIN SOCIAL SCREEN
 // =======================================================
 
 class SocialScreen extends StatelessWidget {
@@ -597,7 +597,7 @@ class SocialScreen extends StatelessWidget {
             ),
           ],
 
-          // TabBar di bawah AppBar
+          // TabBar below AppBar
           bottom: const TabBar(
             indicatorColor: Colors.white,
             labelColor: Colors.white,
@@ -609,11 +609,11 @@ class SocialScreen extends StatelessWidget {
           ),
         ),
 
-        // Konten Tab
+        // Tab Content
         body: const TabBarView(
           children: [
-            _FriendsTab(), // Tab 1: Daftar Teman & Search
-            _RequestsTab(), // Tab 2: Permintaan Pertemanan
+            _FriendsTab(), // Tab 1: Friends List & Search
+            _RequestsTab(), // Tab 2: Friend Requests
           ],
         ),
       ),

@@ -16,21 +16,18 @@ dependencies:
   # State Management
   provider: ^6.1.1
 
-  # Fungsionalitas Tanggal
+  # Date/Localization functionality
   intl: ^0.18.1
 
   # Image Upload
   image_picker: ^1.0.4
 
-  # Launcher Icons & Splash Screen
-  flutter_native_splash: ^2.3.11
-
-  # --- FIREBASE DEPENDENCIES (BARU) ---
-  firebase_storage: ^12.0.0 # Gunakan versi terbaru yang kompatibel
+  # --- FIREBASE DEPENDENCIES ---
+  firebase_storage: ^12.0.0
   firebase_core: ^3.15.2
   firebase_auth: ^5.0.0
   cloud_firestore: ^5.0.0
-  google_sign_in: ^6.1.5  # Untuk berinteraksi dengan layanan Google
+  google_sign_in: ^6.1.5  # For Google services interaction
 
 dev_dependencies:
   flutter_test:
@@ -39,6 +36,9 @@ dev_dependencies:
   flutter_launcher_icons: ^0.13.1
 
   flutter_lints: ^5.0.0
+
+  # Launcher Icons & Splash Screen Tools
+  flutter_native_splash: ^2.3.11
 
 flutter:
   uses-material-design: true
@@ -50,14 +50,14 @@ flutter:
     - assets/workouts/
 
 
-# --- KONFIGURASI ICON ---
+# --- ICON CONFIGURATION ---
 flutter_launcher_icons:
   android: "fitlife_icon"
   ios: true
   image_path: "assets/icon/fitlife_icon.png"
   min_sdk_android: 21
 
-# --- KONFIGURASI SPLASH SCREEN ---
+# --- SPLASH SCREEN CONFIGURATION ---
 flutter_native_splash:
-  color: "#640A0A" # Warna latar belakang merah tua
+  color: "#640A0A" # Dark red background color
   image: "assets/splash/splash_logo.png"

@@ -1,11 +1,10 @@
-// lib/screens/personal_info_screen.dart (MODIFIKASI)
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:intl/intl.dart'; // <-- BARU
+import 'package:intl/intl.dart';
 import '../widgets/custom_button.dart';
 import '../models/user_data.dart';
 import '../providers/user_provider.dart';
-import '../routes/app_routes.dart'; // <-- BARU
+import '../routes/app_routes.dart';
 
 class PersonalInfoScreen extends StatefulWidget {
   const PersonalInfoScreen({super.key});
@@ -39,6 +38,7 @@ class _PersonalInfoScreenState extends State<PersonalInfoScreen> {
     );
   }
 
+  // Function to show Date Picker
   Future<void> _selectDate(BuildContext context) async {
     final DateTime? picked = await showDatePicker(
       context: context,
@@ -49,7 +49,7 @@ class _PersonalInfoScreenState extends State<PersonalInfoScreen> {
         return Theme(
           data: ThemeData.dark().copyWith(
             colorScheme: const ColorScheme.dark(
-              primary: Color(0xFF640A0A), // Warna Merah tua
+              primary: Color(0xFF640A0A), // Dark Red color
               onPrimary: Colors.white,
               surface: Colors.black,
               onSurface: Colors.white,
@@ -68,7 +68,7 @@ class _PersonalInfoScreenState extends State<PersonalInfoScreen> {
   }
 
   void _onNextPressed() {
-    // 1. Validasi dan Parsing Input
+    // 1. Validate and Parse Input
     final username = _usernameController.text;
     final weight = double.tryParse(_weightController.text);
     final height = double.tryParse(_heightController.text);
@@ -76,12 +76,12 @@ class _PersonalInfoScreenState extends State<PersonalInfoScreen> {
     if (username.isEmpty || weight == null || height == null || weight <= 0 || height <= 0 || _selectedGender == null || _selectedDateOfBirth == null)
     {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Harap lengkapi semua data personal dengan benar (Weight & Height harus > 0).')),
+        const SnackBar(content: Text('Please complete all personal data correctly (Weight & Height must be > 0).')),
       );
       return;
     }
 
-    // 2. Buat Objek UserData yang baru
+    // 2. Create new UserData Object
     final newUserData = UserData(
       username: username,
       weight: weight,
@@ -90,11 +90,11 @@ class _PersonalInfoScreenState extends State<PersonalInfoScreen> {
       dateOfBirth: _selectedDateOfBirth!,
     );
 
-    // 3. Simpan Data ke Provider (yang akan menyimpannya ke Firestore, mempertahankan UID & Email)
+    // 3. Save Data to Provider (which will save it to Firestore, preserving UID & Email)
     Provider.of<UserProvider>(context, listen: false).setUserData(newUserData);
 
-    // 4. Navigasi ke CompleteProfileScreen
-    Navigator.pushNamed(context, AppRoutes.completeProfile); // <-- DIUBAH
+    // 4. Navigate to CompleteProfileScreen
+    Navigator.pushNamed(context, AppRoutes.completeProfile);
   }
 
   @override
@@ -107,7 +107,7 @@ class _PersonalInfoScreenState extends State<PersonalInfoScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // Hitung tinggi konten untuk memastikan Spacer bekerja
+    // Calculate content height to ensure Spacer works correctly
     final screenHeight = MediaQuery.of(context).size.height;
     final paddingTop = MediaQuery.of(context).padding.top;
     final paddingBottom = MediaQuery.of(context).padding.bottom;
@@ -129,10 +129,10 @@ class _PersonalInfoScreenState extends State<PersonalInfoScreen> {
             ),
           ),
 
-          // Konten Utama
+          // Main Content
           SafeArea(
             child: SingleChildScrollView(
-              // PENTING: Bungkus dengan SizedBox untuk mengontrol tinggi
+              // IMPORTANT: Wrap with SizedBox to control height
               child: SizedBox(
                 height: contentHeight,
                 child: Padding(
@@ -141,7 +141,7 @@ class _PersonalInfoScreenState extends State<PersonalInfoScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       const SizedBox(height: 10),
-                      // Judul/Logo
+                      // Title/Logo
                       const Text(
                         'FitLife',
                         style: TextStyle(
@@ -181,10 +181,10 @@ class _PersonalInfoScreenState extends State<PersonalInfoScreen> {
                         ],
                       ),
 
-                      // SPACER: Mendorong tombol ke bawah
+                      // SPACER: Pushes buttons to the bottom
                       const Spacer(),
 
-                      // Tombol Next
+                      // Next Button
                       CustomButton(
                         text: 'Next',
                         onPressed: _onNextPressed,
@@ -193,11 +193,11 @@ class _PersonalInfoScreenState extends State<PersonalInfoScreen> {
                       ),
                       const SizedBox(height: 16),
 
-                      // Tombol Back
+                      // Back Button
                       Center(
                         child: TextButton(
                           onPressed: () {
-                            Navigator.pop(context); // Kembali ke halaman Sign Up sebelumnya
+                            Navigator.pop(context); // Go back to the previous Sign Up screen
                           },
                           child: const Text(
                             'Back',
@@ -209,11 +209,11 @@ class _PersonalInfoScreenState extends State<PersonalInfoScreen> {
                       // Footer
                       const Center(
                         child: Text(
-                          '© 2025 Kapal Lawd Cabang',
+                          '© 2025 Kapal Lawd Cabang', // Branding
                           style: TextStyle(fontSize: 12, color: Colors.white54),
                         ),
                       ),
-                      const SizedBox(height: 8), // Padding bawah
+                      const SizedBox(height: 8), // Bottom Padding
                     ],
                   ),
                 ),

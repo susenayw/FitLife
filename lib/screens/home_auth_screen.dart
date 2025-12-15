@@ -1,7 +1,6 @@
-// lib/screens/home_auth_screen.dart (MODIFIKASI)
 import 'package:flutter/material.dart';
 import '../widgets/custom_button.dart';
-import '../routes/app_routes.dart'; // <-- BARU
+import '../routes/app_routes.dart';
 
 class HomeAuthScreen extends StatelessWidget {
   const HomeAuthScreen({super.key});
@@ -21,7 +20,8 @@ class HomeAuthScreen extends StatelessWidget {
               colorBlendMode: BlendMode.darken,
               color: Colors.black.withOpacity(0.5),
               errorBuilder: (context, error, stackTrace) {
-                return Container(color: Colors.black, child: const Center(child: Text('Gambar Background Tidak Ditemukan!', style: TextStyle(color: Colors.red, fontSize: 18),)));
+                // Display error message if background image is not found
+                return Container(color: Colors.black, child: const Center(child: Text('Background Image Not Found!', style: TextStyle(color: Colors.red, fontSize: 18),)));
               },
             ),
           ),
@@ -35,7 +35,7 @@ class HomeAuthScreen extends StatelessWidget {
                 children: [
                   const Spacer(flex: 5),
 
-                  // Logo/Nama Aplikasi
+                  // App Logo/Name
                   const Text(
                     'FitLife',
                     style: TextStyle(fontSize: 48, fontWeight: FontWeight.bold, color: Colors.white),
@@ -43,7 +43,7 @@ class HomeAuthScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 16),
 
-                  // Sub-teks Merah
+                  // Red Sub-text
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
                     decoration: BoxDecoration(
@@ -58,7 +58,7 @@ class HomeAuthScreen extends StatelessWidget {
 
                   SizedBox(height: screenHeight * 0.1),
 
-                  // Deskripsi Aplikasi
+                  // App Description
                   const Text(
                     'Start your fitness journey.\nGuidance, motivation, and a community are in the palm of your hand.',
                     style: TextStyle(
@@ -73,11 +73,11 @@ class HomeAuthScreen extends StatelessWidget {
 
                   const Spacer(flex: 3),
 
-                  // Tombol Login
+                  // Login Button
                   CustomButton(
                     text: 'Login',
                     onPressed: () {
-                      Navigator.pushNamed(context, AppRoutes.login); // <-- DIUBAH
+                      Navigator.pushNamed(context, AppRoutes.login);
                     },
                     backgroundColor: Colors.black.withOpacity(0.9),
                     textColor: Colors.white,
@@ -85,11 +85,11 @@ class HomeAuthScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 16),
 
-                  // Tombol Sign Up
+                  // Sign Up Button
                   CustomButton(
                     text: 'Sign Up',
                     onPressed: () {
-                      Navigator.pushNamed(context, AppRoutes.signUp); // <-- DIUBAH
+                      Navigator.pushNamed(context, AppRoutes.signUp);
                     },
                     backgroundColor: Colors.transparent,
                     textColor: Colors.white,
@@ -98,7 +98,7 @@ class HomeAuthScreen extends StatelessWidget {
 
                   // Footer
                   const Text(
-                    '© 2025 Kapal Lawd Cabang',
+                    '© 2025 Kapal Lawd Cabang', // Branding
                     style: TextStyle(fontSize: 12, color: Colors.white54),
                   ),
                   const SizedBox(height: 8),

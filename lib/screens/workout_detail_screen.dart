@@ -1,5 +1,3 @@
-// lib/screens/workout_detail_screen.dart (FINAL CODE)
-
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/user_provider.dart';
@@ -13,7 +11,7 @@ class WorkoutDetailScreen extends StatelessWidget {
 
   const WorkoutDetailScreen({super.key, required this.workoutName});
 
-  // Data for workout details (Asterisks removed, text size adjusted)
+  // Data for workout details
   Map<String, dynamic> _getWorkoutDetails() {
     switch (workoutName) {
       case 'Running':
@@ -194,11 +192,10 @@ class WorkoutDetailScreen extends StatelessWidget {
               ),
               const SizedBox(height: 20),
 
-              // IMAGE DISPLAY: Now perfectly rectangular (no ClipRRect or BorderRadius)
+              // IMAGE DISPLAY: Now perfectly rectangular
               Container(
                 width: MediaQuery.of(context).size.width * 0.85, // Fill 85% of screen width
                 height: 180, // Maintain height
-                // Removed BoxDecoration with borderRadius for straight edges
                 child: Image.asset(
                   imagePath,
                   width: double.infinity, // Fill container width
@@ -250,14 +247,14 @@ class WorkoutDetailScreen extends StatelessWidget {
                     const Divider(color: Colors.white30),
                     const SizedBox(height: 10),
 
-                    // Description (INCREASED FONT SIZE)
+                    // Description
                     Text(
                       details['description'],
                       style: const TextStyle(fontSize: 17, color: Colors.white70, height: 1.6),
                     ),
                     const SizedBox(height: 10),
 
-                    // Benefits (INCREASED FONT SIZE)
+                    // Benefits
                     if (details['benefits'] != null && details['benefits'].isNotEmpty)
                       Text(
                         details['benefits'],
@@ -265,7 +262,7 @@ class WorkoutDetailScreen extends StatelessWidget {
                       ),
                     const SizedBox(height: 10),
 
-                    // Approx. Calorie Burn (INCREASED FONT SIZE)
+                    // Approx. Calorie Burn
                     if (details['approxCalorieBurn'] != null && details['approxCalorieBurn'].isNotEmpty)
                       Text(
                         details['approxCalorieBurn'],
@@ -278,7 +275,7 @@ class WorkoutDetailScreen extends StatelessWidget {
             ),
           ),
 
-          // 2. Floating ADD Button (Button label changed to "Add")
+          // 2. Floating ADD Button
           Positioned(
             top: buttonFloatPosition,
             left: 0,
@@ -306,7 +303,6 @@ class WorkoutDetailScreen extends StatelessWidget {
                   Navigator.pop(context);
                 },
                 icon: const Icon(Icons.add, color: Colors.black),
-                // CHANGED LABEL: Removed '(Default)'
                 label: const Text('Add', style: TextStyle(color: Colors.black, fontSize: 18, fontWeight: FontWeight.bold)),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.white,

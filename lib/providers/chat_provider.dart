@@ -1,5 +1,3 @@
-// lib/providers/chat_provider.dart
-
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -8,28 +6,28 @@ class ChatProvider with ChangeNotifier {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final FirebaseAuth _auth = FirebaseAuth.instance;
 
-  // Helper: Menentukan Chat Room ID yang konsisten antara dua pengguna
+  // Helper: Determines a consistent Chat Room ID between two users
   String _getChatRoomId(String userId1, String userId2) {
-    // Mengurutkan ID untuk memastikan ChatID selalu sama (misal: A_B atau B_A selalu jadi A_B)
+    // Sort the IDs to ensure the Chat ID is always the same (e.g., A_B or B_A always becomes A_B)
     List<String> ids = [userId1, userId2];
     ids.sort();
     return ids.join('_');
   }
 
-  // FUNGSI UTAMA: MENGIRIM PESAN
+  // MAIN FUNCTION: Sending a message
   Future<void> sendMessage({
     required String recipientId,
     required String content,
   }) async {
     final currentUserId = _auth.currentUser?.uid;
+    // Do not send empty messages
     if (currentUserId == null || content.trim().isEmpty) {
-      // Jangan kirim pesan kosong
       return;
     }
 
     final chatRoomId = _getChatRoomId(currentUserId, recipientId);
 
-    // Data pesan yang akan disimpan
+    // Data for the message to be stored
     Map<String, dynamic> messageData = {
       'senderId': currentUserId,
       'content': content.trim(),
@@ -44,21 +42,21 @@ class ChatProvider with ChangeNotifier {
           .add(messageData);
     } catch (e) {
       debugPrint('Error sending chat message: $e');
-      // PENTING: Anda bisa menampilkan Snack Bar di UI jika error di sini.
+      // NOTE: A SnackBar or error message should be displayed in the UI here.
     }
   }
 
-  // FUNGSI UNTUK MENDAPATKAN STREAM PESAN
+  // FUNCTION TO GET THE MESSAGE STREAM
   Stream<QuerySnapshot> getMessages(String recipientId) {
     final currentUserId = _auth.currentUser?.uid;
+    // Return an empty stream if the user is not logged in
     if (currentUserId == null) {
-      // Mengembalikan stream kosong jika belum login
       return const Stream.empty();
     }
 
     final chatRoomId = _getChatRoomId(currentUserId, recipientId);
 
-    // Ambil pesan, diurutkan berdasarkan timestamp.
+    // Retrieve messages, sorted by timestamp.
     return _firestore
         .collection('chats')
         .doc(chatRoomId)

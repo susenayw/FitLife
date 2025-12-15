@@ -1,5 +1,3 @@
-// lib/screens/unified_activity_screen.dart
-
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/user_provider.dart';
@@ -18,17 +16,17 @@ class UnifiedActivityScreen extends StatefulWidget {
 class _UnifiedActivityScreenState extends State<UnifiedActivityScreen> {
   ActivityView _currentView = ActivityView.selection;
 
-  // Map untuk menyimpan jumlah set/durasi yang dipilih pengguna
+  // Map to store the sets/duration count selected by the user
   final Map<String, int> _workoutCounts = {};
 
-  // Data Latihan (tetap)
+  // Workout Data (static)
   final List<String> cardioWorkouts = const ['Running', 'Jump Rope', 'Burpees', 'Jumping Jacks', 'High Knees', 'Mountain Climbers', 'Cycling'];
   final List<IconData> cardioIcons = const [Icons.directions_run, Icons.sports_tennis, Icons.person, Icons.accessibility_new, Icons.directions_walk, Icons.fitness_center, Icons.directions_bike];
 
   final List<String> weightWorkouts = const ['Bench Press', 'Squat', 'Dead Lift', 'Shoulder Press', 'Pull-Up', 'Barbell Row', 'Leg Press', 'Bicep Curl', 'Tricep Extension'];
   final List<IconData> weightIcons = const [Icons.fitness_center, Icons.accessibility_new, Icons.person, Icons.sports_gymnastics, Icons.vertical_align_top, Icons.rowing, Icons.airline_seat_legroom_extra, Icons.volunteer_activism, Icons.directions_walk];
 
-  // --- FUNGSI NAVIGASI STATE INTERNAL ---
+  // --- INTERNAL STATE NAVIGATION FUNCTIONS ---
   void _setCurrentView(ActivityView newView) {
     setState(() {
       _currentView = newView;
@@ -43,7 +41,7 @@ class _UnifiedActivityScreenState extends State<UnifiedActivityScreen> {
     }
   }
 
-  // --- LOGIKA UNTUK INPUT SET/DURATION ---
+  // --- LOGIC FOR SET/DURATION INPUT ---
   int _getInitialCount(String workoutName, String workoutType) {
     if (_workoutCounts.containsKey(workoutName)) {
       return _workoutCounts[workoutName]!;
@@ -77,11 +75,11 @@ class _UnifiedActivityScreenState extends State<UnifiedActivityScreen> {
       SnackBar(content: Text('$workoutName added to My Plan!')),
     );
 
-    // Kembali ke MainScreen
+    // Go back to MainScreen
     Navigator.pop(context);
   }
 
-  // --- WIDGET PEMBANGUN ITEM LIST DENGAN COUNTER & ADD ---
+  // --- WIDGET BUILDER FOR LIST ITEM WITH COUNTER & ADD ---
   Widget _buildWorkoutListItem({
     required String name,
     required IconData icon,
@@ -115,7 +113,7 @@ class _UnifiedActivityScreenState extends State<UnifiedActivityScreen> {
                 style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
               ),
               const Spacer(),
-              // Tombol Detail
+              // Detail Button
               IconButton(
                 icon: const Icon(Icons.info_outline, color: Colors.white70),
                 onPressed: () {
@@ -129,7 +127,7 @@ class _UnifiedActivityScreenState extends State<UnifiedActivityScreen> {
           ),
           const SizedBox(height: 10),
 
-          // Baris Bawah: Counter dan Tombol Add
+          // Bottom Row: Counter and Add Button
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -150,7 +148,7 @@ class _UnifiedActivityScreenState extends State<UnifiedActivityScreen> {
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 10),
                       child: Text(
-                        displayLabel, // Menggunakan label yang dihitung
+                        displayLabel, // Use calculated label
                         style: const TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
                       ),
                     ),
@@ -164,11 +162,11 @@ class _UnifiedActivityScreenState extends State<UnifiedActivityScreen> {
                 ),
               ),
 
-              // Tombol Add
+              // Add Button
               ElevatedButton(
                 onPressed: onAdd,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFFE50000), // Merah
+                  backgroundColor: const Color(0xFFE50000), // Red
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                   padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
                 ),
@@ -181,7 +179,7 @@ class _UnifiedActivityScreenState extends State<UnifiedActivityScreen> {
     );
   }
 
-  // --- WIDGET LIST ---
+  // --- LIST WIDGET ---
   Widget _buildList(List<String> workouts, List<IconData> icons, String workoutType) {
     return ListView.builder(
       itemCount: workouts.length,
@@ -204,14 +202,14 @@ class _UnifiedActivityScreenState extends State<UnifiedActivityScreen> {
   }
 
 
-  // --- WIDGET SELECTION VIEW (Tampilan 1: Mengisi Penuh Layar) ---
+  // --- SELECTION VIEW WIDGET (View 1: Fills the Screen) ---
   Widget _buildSelectionView() {
     return Column(
       children: [
-        // TOMBOL CARDIO (Expanded)
+        // CARDIO BUTTON (Expanded)
         Expanded(
           child: Padding(
-            // Padding disesuaikan agar ada margin di sekitar kedua tombol
+            // Adjusted padding for margin around both buttons
             padding: const EdgeInsets.fromLTRB(24.0, 30.0, 24.0, 15.0),
             child: _buildWorkoutCard(
               context,
@@ -222,10 +220,10 @@ class _UnifiedActivityScreenState extends State<UnifiedActivityScreen> {
           ),
         ),
 
-        // TOMBOL WEIGHT TRAINING (Expanded)
+        // WEIGHT TRAINING BUTTON (Expanded)
         Expanded(
           child: Padding(
-            // Padding disesuaikan agar ada margin di sekitar kedua tombol
+            // Adjusted padding for margin around both buttons
             padding: const EdgeInsets.fromLTRB(24.0, 15.0, 24.0, 30.0),
             child: _buildWorkoutCard(
               context,
@@ -239,15 +237,15 @@ class _UnifiedActivityScreenState extends State<UnifiedActivityScreen> {
     );
   }
 
-  // WIDGET PEMBANTU CARD (Dibuat lebih fleksibel untuk mengisi Expanded)
+  // CARD HELPER WIDGET (Made flexible to fill Expanded)
   Widget _buildWorkoutCard(BuildContext context, {required String title, required IconData icon, required VoidCallback onTap}) {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        // Hapus fixed height (height: 200) agar Container mengisi Expanded
+        // Removed fixed height to allow Container to fill Expanded
         width: double.infinity,
         decoration: BoxDecoration(
-          color: const Color(0xFFFFCCCC), // Warna latar yang cerah di dalam tema gelap
+          color: const Color(0xFFFFCCCC), // Bright background color in dark theme
           borderRadius: BorderRadius.circular(20),
           boxShadow: [
             BoxShadow(
@@ -274,7 +272,7 @@ class _UnifiedActivityScreenState extends State<UnifiedActivityScreen> {
   }
 
 
-  // --- LOGIKA BUILD BODY CONTENT ---
+  // --- BUILD BODY CONTENT LOGIC ---
   Widget _buildBodyContent() {
     switch (_currentView) {
       case ActivityView.selection:
@@ -307,8 +305,7 @@ class _UnifiedActivityScreenState extends State<UnifiedActivityScreen> {
           onPressed: _onBackPress,
         ),
       ),
-      // PERBAIKAN: body cukup memanggil _buildBodyContent, karena _buildSelectionView
-      // sudah mengelola Expanded di dalamnya.
+      // The body calls _buildBodyContent, which manages the Expanded widgets internally.
       body: SafeArea(
         child: _buildBodyContent(),
       ),

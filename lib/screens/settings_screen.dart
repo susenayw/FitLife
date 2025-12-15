@@ -1,5 +1,3 @@
-// lib/screens/settings_screen.dart (KODE LENGKAP - DENGAN LOGIKA KONDISIONAL GOOGLE USER)
-
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:image_picker/image_picker.dart';
@@ -11,20 +9,20 @@ import '../widgets/custom_button.dart';
 import '../routes/app_routes.dart';
 
 // =======================================================
-// A. SETTINGS MENU UTAMA (Tab yang terlihat di MainScreen)
+// A. MAIN SETTINGS MENU (Tab visible on MainScreen)
 // =======================================================
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
 
-  // Widget Pembantu untuk Tombol Navigasi
+  // Helper Widget for Navigation Buttons
   Widget _buildSettingsButton(BuildContext context, {required String text, required Widget targetScreen}) {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 8.0),
       child: ElevatedButton(
         onPressed: () {
-          // Menggunakan Navigator.push untuk melompat ke layar penuh baru (menyembunyikan NavBar)
+          // Use Navigator.push to jump to a new full screen (hiding the NavBar)
           Navigator.push(
             context,
             MaterialPageRoute(builder: (context) => targetScreen),
@@ -44,12 +42,12 @@ class SettingsScreen extends StatelessWidget {
     );
   }
 
-  // --- FUNGSI LOGOUT (Dipindahkan ke sini) ---
+  // --- LOGOUT FUNCTION ---
   void _performLogout(BuildContext context) async {
     final userProvider = Provider.of<UserProvider>(context, listen: false);
     await userProvider.logout();
 
-    // Kembali ke HomeAuthScreen dan hapus semua rute sebelumnya
+    // Go back to HomeAuthScreen and remove all previous routes
     Navigator.pushNamedAndRemoveUntil(
       context,
       AppRoutes.homeAuth,
@@ -58,7 +56,7 @@ class SettingsScreen extends StatelessWidget {
   }
 
 
-  // --- MENU UTAMA CONTENT (body) ---
+  // --- MAIN MENU CONTENT (body) ---
   Widget _buildMenuView(BuildContext context) {
     return Column(
       children: [
@@ -84,12 +82,12 @@ class SettingsScreen extends StatelessWidget {
 
         const Spacer(),
 
-        // --- TOMBOL LOGOUT BARU (DI BAWAH) ---
+        // --- LOGOUT BUTTON ---
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 10.0),
           child: CustomButton(
             text: 'Logout',
-            onPressed: () => _performLogout(context), // Panggil fungsi Logout di SettingsScreen
+            onPressed: () => _performLogout(context), // Call Logout function
             backgroundColor: Colors.redAccent,
             textColor: Colors.white,
           ),
@@ -98,7 +96,7 @@ class SettingsScreen extends StatelessWidget {
         const Padding(
           padding: EdgeInsets.only(bottom: 10.0),
           child: Text(
-            '© 2025 Kapal Lawd Cabang',
+            '© 2025 Kapal Lawd Cabang', // Branding
             style: TextStyle(fontSize: 12, color: Colors.white54),
           ),
         ),
@@ -115,7 +113,7 @@ class SettingsScreen extends StatelessWidget {
         backgroundColor: Colors.transparent,
         elevation: 0,
         automaticallyImplyLeading: false,
-        // Judul AppBar
+        // AppBar Title
         title: const Text('Settings', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
       ),
       body: SafeArea(
@@ -149,6 +147,7 @@ class _EditProfileFullScreenState extends State<EditProfileFullScreen> {
     _usernameController.text = userData?.username ?? '';
     _bioController.text = userData?.bio ?? '';
 
+    // Load existing local profile picture path
     if (userData?.profilePicturePath != null) {
       final file = File(userData!.profilePicturePath!);
       if (file.existsSync()) {
@@ -310,7 +309,7 @@ class _EditProfileFullScreenState extends State<EditProfileFullScreen> {
 }
 
 // =======================================================
-// C. ACCOUNT FULL SCREEN (IMPLEMENTASI LOGIKA KONDISIONAL GOOGLE USER)
+// C. ACCOUNT FULL SCREEN (IMPLEMENTS CONDITIONAL GOOGLE USER LOGIC)
 // =======================================================
 
 class AccountFullScreen extends StatefulWidget {
@@ -328,7 +327,7 @@ class _AccountFullScreenState extends State<AccountFullScreen> {
   bool _isLoading = false;
   String? _errorMessage;
 
-  // --- FUNGSI MENGUBAH PASSWORD SECARA NYATA ---
+  // --- FUNCTION TO ACTUALLY CHANGE PASSWORD ---
   void _changePassword() async {
     final userProvider = Provider.of<UserProvider>(context, listen: false);
     final email = userProvider.currentUser?.email;
@@ -337,21 +336,21 @@ class _AccountFullScreenState extends State<AccountFullScreen> {
     final newPassword = _newPasswordController.text;
     final confirmPassword = _confirmPasswordController.text;
 
-    // 1. Validasi Input
+    // 1. Input Validation
     if (email == null) {
-      setState(() => _errorMessage = 'Sesi pengguna tidak valid.');
+      setState(() => _errorMessage = 'Invalid user session.');
       return;
     }
     if (oldPassword.isEmpty || newPassword.isEmpty || confirmPassword.isEmpty) {
-      setState(() => _errorMessage = 'Semua kolom password harus diisi.');
+      setState(() => _errorMessage = 'All password fields must be filled.');
       return;
     }
     if (newPassword != confirmPassword) {
-      setState(() => _errorMessage = 'Password Baru dan Konfirmasi tidak cocok.');
+      setState(() => _errorMessage = 'New Password and Confirmation do not match.');
       return;
     }
     if (newPassword.length < 6) {
-      setState(() => _errorMessage = 'Password baru harus minimal 6 karakter.');
+      setState(() => _errorMessage = 'New password must be at least 6 characters long.');
       return;
     }
 
@@ -361,7 +360,7 @@ class _AccountFullScreenState extends State<AccountFullScreen> {
     });
 
     // ===================================
-    // LANGKAH 1: RE-AUTHENTICATE (Verifikasi Password Lama)
+    // STEP 1: RE-AUTHENTICATE (Verify Old Password)
     // ===================================
     final reauthError = await userProvider.reauthenticateUser(
       email: email,
@@ -377,7 +376,7 @@ class _AccountFullScreenState extends State<AccountFullScreen> {
     }
 
     // ===================================
-    // LANGKAH 2: GANTI PASSWORD BARU
+    // STEP 2: CHANGE NEW PASSWORD
     // ===================================
     final changeError = await userProvider.changePassword(
       newPassword: newPassword,
@@ -391,18 +390,18 @@ class _AccountFullScreenState extends State<AccountFullScreen> {
       return;
     }
 
-    // SUKSES
+    // SUCCESS
     setState(() => _isLoading = false);
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Password berhasil diubah! Silakan login ulang.')),
+      const SnackBar(content: Text('Password changed successfully! Please log in again.')),
     );
 
-    // Opsional: Paksa Logout dan arahkan ke Login
+    // Optional: Force Logout and navigate to Login
     await userProvider.logout();
     Navigator.of(context).pushNamedAndRemoveUntil(AppRoutes.login, (route) => false);
   }
 
-  // FUNGSI COPY SHORT ID
+  // COPY SHORT ID FUNCTION
   void _copyShortId(String shortId) {
     Clipboard.setData(ClipboardData(text: shortId));
     ScaffoldMessenger.of(context).showSnackBar(
@@ -437,7 +436,7 @@ class _AccountFullScreenState extends State<AccountFullScreen> {
     final userProvider = Provider.of<UserProvider>(context);
     final shortId = userProvider.currentUser?.shortId ?? 'N/A';
 
-    // VARIABEL BARU
+    // NEW VARIABLE
     final bool isGoogleAccount = userProvider.isGoogleUser;
 
     return Scaffold(
@@ -455,7 +454,7 @@ class _AccountFullScreenState extends State<AccountFullScreen> {
           children: [
             const SizedBox(height: 50),
 
-            // 1. KODE UNIK (SELALU DITAMPILKAN)
+            // 1. UNIQUE ID (ALWAYS DISPLAYED)
             const Text('Your Unique ID', style: TextStyle(color: Colors.white70, fontSize: 16)),
             const SizedBox(height: 8),
             GestureDetector(
@@ -477,7 +476,7 @@ class _AccountFullScreenState extends State<AccountFullScreen> {
             ),
 
             // ===================================================
-            // LOGIKA KONDISIONAL: HANYA TAMPILKAN JIKA BUKAN GOOGLE USER
+            // CONDITIONAL LOGIC: ONLY SHOW IF NOT A GOOGLE USER
             // ===================================================
             if (!isGoogleAccount) ...[
               const SizedBox(height: 40),
@@ -514,7 +513,7 @@ class _AccountFullScreenState extends State<AccountFullScreen> {
                   : CustomButton(text: 'Change Password', onPressed: _changePassword, backgroundColor: Colors.black, textColor: Colors.white),
               const SizedBox(height: 40),
             ] else ...[
-              // Pesan khusus untuk pengguna Google
+              // Specific message for Google users
               const SizedBox(height: 40),
               const Text(
                 "You're signed in using Google. For security reasons, please change your password directly through your Google Account Settings.",
@@ -640,7 +639,7 @@ class _UpdatesFullScreenState extends State<UpdatesFullScreen> {
             const Spacer(),
 
             // Next/Save Button
-            CustomButton(text: 'Next', onPressed: _saveUpdates, backgroundColor: Colors.black, textColor: Colors.white),
+            CustomButton(text: 'Save', onPressed: _saveUpdates, backgroundColor: Colors.black, textColor: Colors.white),
             const SizedBox(height: 16),
 
             // Back Button

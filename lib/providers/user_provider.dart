@@ -1,4 +1,3 @@
-// lib/providers/user_provider.dart (KODE LENGKAP & TERKINI)
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -15,24 +14,24 @@ class UserProvider with ChangeNotifier {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final GoogleSignIn _googleSignIn = GoogleSignIn();
 
-  // TRACKING & RESET HARIAN
+  // TRACKING & DAILY RESET
   DateTime? _lastActivityDate;
 
   // GETTERS
   UserData? get currentUser => _currentUser;
 
-  // GETTER UNTUK LOGIKA KONDISIONAL
+  // GETTER for conditional logic
   bool get isGoogleUser {
     final user = _auth.currentUser;
-    // Cek apakah user ada dan providerData-nya mengandung 'google.com'
+    // Check if user exists and their providerData contains 'google.com'
     return user != null && user.providerData.any((info) => info.providerId == 'google.com');
   }
 
-  // --- DATA KALORI HARIAN ---
+  // --- DAILY CALORIE DATA ---
   int _netDailyCalorieGoal = 0;
   int get netDailyCalorieGoal => _netDailyCalorieGoal;
 
-  // Helper untuk menyimpan Net Daily Calorie Goal ke Firestore
+  // Helper to save Net Daily Calorie Goal to Firestore
   Future<void> _saveNetDailyCalorieGoal() async {
     final uid = _currentUser?.userId;
     if (uid == null || uid.isEmpty) return;
@@ -51,34 +50,34 @@ class UserProvider with ChangeNotifier {
   void deductCaloriesBurned(int caloriesBurned) async {
     _netDailyCalorieGoal -= caloriesBurned;
 
-    // Perbarui tanggal aktivitas terakhir saat kalori dikurangi (penting untuk reset)
+    // Update the last activity date when calories are deducted (important for reset)
     _lastActivityDate = DateTime.now();
 
     await _saveNetDailyCalorieGoal();
-    // Simpan data user (termasuk lastActivityDate yang baru)
+    // Save user data (including the new lastActivityDate)
     await _saveUserDataToFirestore(_currentUser!);
 
     notifyListeners();
   }
 
-  // --- DATA MY PLAN & RECENT ACTIVITY (CACHE DARI FIRESTORE) ---
+  // --- MY PLAN & RECENT ACTIVITY DATA ---
   List<WorkoutSet> _myPlan = [];
   List<WorkoutSet> _recentActivity = [];
 
   List<WorkoutSet> get currentUserPlan => _myPlan;
   List<WorkoutSet> get recentActivity => _recentActivity;
 
-  // Generate ID Pendek
+  // Generate Short ID
   String _generateShortId(String uid) {
     final random = Random();
-    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890';
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ134567890';
     String suffix = List.generate(4, (index) => chars[random.nextInt(chars.length)]).join();
     return '${uid.substring(0, 4).toUpperCase()}$suffix';
   }
 
 
   // ------------------------------------------------------------------
-  // FUNGSI AUTHENTICATION & PROFILE DATA
+  // AUTHENTICATION & PROFILE DATA FUNCTIONS
   // ------------------------------------------------------------------
 
   Future<String?> signUp({required String email, required String password, String username = 'New User'}) async {
@@ -96,11 +95,11 @@ class UserProvider with ChangeNotifier {
         username: username,
         dateOfBirth: DateTime(2000, 1, 1),
         shortId: shortId,
-        friends: [], // Inisialisasi friends
+        friends: [], // Initialize friends
       );
       _currentUser = newUser;
 
-      // INISIALISASI TANGGAL AKTIVITAS AWAL
+      // Initialize starting activity date
       _lastActivityDate = DateTime.now();
 
       await _saveUserDataToFirestore(newUser);
@@ -134,13 +133,13 @@ class UserProvider with ChangeNotifier {
     }
   }
 
-  // FUNGSI BARU: GOOGLE SIGN IN
+  // GOOGLE SIGN IN FUNCTION
   Future<String?> signInWithGoogle() async {
     try {
       final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
 
       if (googleUser == null) {
-        return 'Sign-in dibatalkan oleh pengguna.';
+        return 'Sign-in cancelled by user.';
       }
 
       final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
@@ -158,7 +157,7 @@ class UserProvider with ChangeNotifier {
         final doc = await _firestore.collection('users').doc(uid).get();
 
         if (!doc.exists) {
-          // PENGGUNA BARU: Buat dokumen pengguna baru di Firestore
+          // NEW USER: Create a new user document in Firestore
           String shortId = _generateShortId(uid);
 
           UserData newUser = UserData(
@@ -171,23 +170,23 @@ class UserProvider with ChangeNotifier {
           );
 
           _currentUser = newUser;
-          // INISIALISASI TANGGAL AKTIVITAS AWAL
+          // Initialize starting activity date
           _lastActivityDate = DateTime.now();
 
           await _saveUserDataToFirestore(newUser);
           await _saveNetDailyCalorieGoal();
 
           notifyListeners();
-          return 'NEW_USER'; // MENGEMBALIKAN FLAG PENGGUNA BARU
+          return 'NEW_USER'; // Return new user flag
 
         } else {
-          // PENGGUNA LAMA: Ambil data dari Firestore
+          // EXISTING USER: Fetch data from Firestore
           await fetchUserDataFromFirestore(uid);
           notifyListeners();
-          return null; // Sukses, bukan user baru
+          return null;
         }
       }
-      return 'Autentikasi Firebase gagal.';
+      return 'Firebase authentication failed.';
 
     } on FirebaseAuthException catch (e) {
       return e.message;
@@ -196,14 +195,14 @@ class UserProvider with ChangeNotifier {
     }
   }
 
-  // FUNGSI BARU: RESET PASSWORD VIA EMAIL
+  // RESET PASSWORD VIA EMAIL FUNCTION
   Future<String?> resetPassword(String email) async {
     try {
       await _auth.sendPasswordResetEmail(email: email);
       return null;
     } on FirebaseAuthException catch (e) {
       if (e.code == 'user-not-found') {
-        return 'Akun dengan email ini tidak ditemukan.';
+        return 'Account with this email not found.';
       }
       return e.message;
     } catch (e) {
@@ -212,18 +211,18 @@ class UserProvider with ChangeNotifier {
   }
 
   // =======================================================
-  // FUNGSI CHANGE PASSWORD
+  // CHANGE PASSWORD FUNCTIONS
   // =======================================================
 
   Future<String?> reauthenticateUser({required String email, required String oldPassword}) async {
     final user = _auth.currentUser;
     if (user == null) {
-      return 'Pengguna tidak ditemukan. Silakan login ulang.';
+      return 'User not found. Please log in again.';
     }
 
     if (isGoogleUser) {
-      // Walaupun ini dicegah di UI, kita tetap memberikan pesan error yang jelas di sini
-      return 'Akun ini terdaftar menggunakan Google. Password harus diubah melalui akun Google Anda.';
+      // Return clear error message for Google users
+      return 'This account is registered using Google. Password must be changed through your Google account.';
     }
 
     try {
@@ -234,7 +233,7 @@ class UserProvider with ChangeNotifier {
 
     } on FirebaseAuthException catch (e) {
       if (e.code == 'wrong-password' || e.code == 'invalid-credential') {
-        return 'Password lama salah. Verifikasi gagal.';
+        return 'Incorrect old password. Verification failed.';
       }
       return e.message;
 
@@ -247,7 +246,7 @@ class UserProvider with ChangeNotifier {
   Future<String?> changePassword({required String newPassword}) async {
     final user = _auth.currentUser;
     if (user == null) {
-      return 'Pengguna tidak ditemukan. Gagal mengubah password.';
+      return 'User not found. Failed to change password.';
     }
 
     try {
@@ -256,7 +255,7 @@ class UserProvider with ChangeNotifier {
 
     } on FirebaseAuthException catch (e) {
       if (e.code == 'weak-password') {
-        return 'Password terlalu lemah. Harus setidaknya 6 karakter.';
+        return 'Password is too weak. Must be at least 6 characters.';
       }
       return e.message;
     } catch (e) {
@@ -267,29 +266,29 @@ class UserProvider with ChangeNotifier {
   // =======================================================
 
   Future<void> logout() async {
-    await _googleSignIn.signOut(); // Tambahkan sign out dari Google
+    await _googleSignIn.signOut();
     await _auth.signOut();
     _currentUser = null;
     _myPlan.clear();
     _recentActivity.clear();
     _netDailyCalorieGoal = 0;
-    _lastActivityDate = null; // Reset tanggal
+    _lastActivityDate = null; // Reset date
     notifyListeners();
   }
 
-  // FUNGSI UNTUK MENGAMBIL DATA FIRESTORE (PUBLIK)
+  // PUBLIC FUNCTION TO FETCH FIRESTORE DATA
   Future<void> fetchUserDataFromFirestore(String uid) async {
     final doc = await _firestore.collection('users').doc(uid).get();
 
     if (doc.exists && doc.data() != null) {
       final data = doc.data()!;
-      _currentUser = _userDataFromMap(data); // Memuat _lastActivityDate di sini
+      _currentUser = _userDataFromMap(data); // Loads _lastActivityDate here
 
-      // Memuat nilai kalori dari Firestore
+      // Load calorie value from Firestore
       _netDailyCalorieGoal = (data['netDailyCalorieGoal'] as num?)?.toInt() ?? 0;
 
       // =======================================================
-      // LOGIKA RESET HARIAN
+      // DAILY RESET LOGIC
       // =======================================================
       final now = DateTime.now();
       bool shouldReset = false;
@@ -304,7 +303,7 @@ class UserProvider with ChangeNotifier {
       }
 
       if (shouldReset) {
-        print('DAILY RESET TRIGGERED: Mereset kalori dan aktivitas.');
+        print('DAILY RESET TRIGGERED: Resetting calories and activity.');
 
         _netDailyCalorieGoal = 0;
         _recentActivity.clear();
@@ -315,12 +314,13 @@ class UserProvider with ChangeNotifier {
           'lastActivityDate': _lastActivityDate!.toIso8601String()
         });
       } else if (_lastActivityDate == null) {
+        // Set initial last activity date if missing
         _lastActivityDate = now;
         await _firestore.collection('users').doc(uid).update({'lastActivityDate': _lastActivityDate!.toIso8601String()});
       }
       // =======================================================
 
-      // Cek dan Generate ShortID jika belum ada (untuk akun lama)
+      // Check and Generate ShortID if missing (for older accounts)
       if (_currentUser?.shortId == null) {
         String newShortId = _generateShortId(uid);
         _currentUser = _currentUser!.copyWith(shortId: newShortId);
@@ -328,23 +328,23 @@ class UserProvider with ChangeNotifier {
       }
 
     } else {
-      // Jika dokumen tidak ada (kasus Sign Up baru)
+      // If document does not exist (new Sign Up case, but usually handled by signUp function)
       _currentUser = UserData(
         userId: uid,
         email: _auth.currentUser?.email ?? 'default@example.com',
         dateOfBirth: DateTime(2000, 1, 1),
       );
-      _lastActivityDate = DateTime.now(); // SET TANGGAL AWAL UNTUK USER BARU
+      _lastActivityDate = DateTime.now(); // Set initial date for new user
       await _saveUserDataToFirestore(_currentUser!);
       await _saveNetDailyCalorieGoal();
     }
 
-    // Muat data plan/activity setelah data user dimuat
+    // Load plan/activity data after user data is loaded
     await loadWorkoutsFromFirestore();
     notifyListeners();
   }
 
-  // Helper: Simpan/Update data pengguna ke Firestore
+  // Helper: Save/Update user data to Firestore
   Map<String, dynamic> _userDataToMap(UserData data) {
     return {
       'userId': data.userId,
@@ -357,20 +357,20 @@ class UserProvider with ChangeNotifier {
       'bio': data.bio,
       'profilePicturePath': data.profilePicturePath,
       'shortId': data.shortId,
-      'friends': data.friends, // Tambahkan daftar teman
-      // TAMBAHKAN: Tanggal terakhir aktivitas
+      'friends': data.friends,
+      // Last activity date is included here
       'lastActivityDate': _lastActivityDate?.toIso8601String(),
     };
   }
 
-  // Helper: Konversi Map Firestore ke UserData
+  // Helper: Convert Firestore Map to UserData
   UserData _userDataFromMap(Map<String, dynamic> map) {
     List<String> friendsList = [];
     if (map['friends'] is List) {
       friendsList = List<String>.from(map['friends']);
     }
 
-    // AMBIL TANGGAL TERAKHIR AKTIVITAS DARI MAP
+    // Retrieve last activity date from the map
     if (map.containsKey('lastActivityDate') && map['lastActivityDate'] != null) {
       _lastActivityDate = DateTime.tryParse(map['lastActivityDate'] ?? '');
     } else {
@@ -389,24 +389,24 @@ class UserProvider with ChangeNotifier {
       bio: map['bio'],
       profilePicturePath: map['profilePicturePath'],
       shortId: map['shortId'],
-      friends: friendsList, // Gunakan daftar yang dikonversi
+      friends: friendsList,
     );
   }
 
   Future<void> _saveUserDataToFirestore(UserData data) async {
     if (data.userId == null || data.userId!.isEmpty) return;
-    // Menggunakan _userDataToMap di sini akan menyimpan lastActivityDate yang baru
+    // Using _userDataToMap ensures the updated lastActivityDate is saved
     await _firestore.collection('users').doc(data.userId).set(_userDataToMap(data), SetOptions(merge: true));
   }
 
-  // --- FUNGSI UPDATE DATA PROFIL ---
+  // --- PROFILE DATA UPDATE FUNCTIONS ---
 
   void setUserData(UserData data) {
     final finalData = data.copyWith(
       userId: _currentUser?.userId,
       email: _currentUser?.email ?? '',
       shortId: _currentUser?.shortId,
-      friends: _currentUser?.friends, // Pastikan friends dipertahankan
+      friends: _currentUser?.friends, // Ensure friends list is preserved
     );
     _currentUser = finalData;
     _saveUserDataToFirestore(finalData);
@@ -446,7 +446,7 @@ class UserProvider with ChangeNotifier {
   }
 
   // ------------------------------------------------------------------
-  // FUNGSI KHUSUS UNTUK WORKOUT PLAN & ACTIVITY (FIREBASE IMPLEMENTATION)
+  // WORKOUT PLAN & ACTIVITY FUNCTIONS (FIREBASE IMPLEMENTATION)
   // ------------------------------------------------------------------
 
   Future<void> loadWorkoutsFromFirestore() async {
@@ -458,6 +458,7 @@ class UserProvider with ChangeNotifier {
     final planSnapshot = await userRef.collection('plan').get();
     _myPlan = planSnapshot.docs.map((doc) => WorkoutSet.fromMap(doc.id, doc.data())).toList();
 
+    // Only load recent activity if the list is empty (avoids unnecessary reads during rebuilds)
     if (_recentActivity.isEmpty) {
       final activitySnapshot = await userRef
           .collection('activity')
@@ -514,6 +515,7 @@ class UserProvider with ChangeNotifier {
 
     final completedWorkout = _myPlan.removeAt(index);
 
+    // Simple calorie calculation logic
     if (completedWorkout.type == 'Cardio') {
       completedWorkout.caloriesBurned = completedWorkout.repsOrDuration;
     } else {
@@ -522,8 +524,10 @@ class UserProvider with ChangeNotifier {
 
     deductCaloriesBurned(completedWorkout.caloriesBurned);
 
+    // Delete from 'plan' subcollection
     await _firestore.collection('users').doc(uid).collection('plan').doc(completedWorkout.id).delete();
 
+    // Add to 'activity' subcollection
     final activityCollection = _firestore.collection('users').doc(uid).collection('activity');
     final activityDocRef = await activityCollection.add(completedWorkout.toMap());
 
@@ -534,10 +538,10 @@ class UserProvider with ChangeNotifier {
   }
 
   // ------------------------------------------------------------------
-  // FUNGSI SOCIAL
+  // SOCIAL FUNCTIONS
   // ------------------------------------------------------------------
 
-  // 1. Mencari pengguna berdasarkan Username atau ShortID
+  // 1. Search users by Username or ShortID
   Future<List<UserData>> searchUsers(String query) async {
     if (query.length < 3) return [];
 
@@ -546,7 +550,7 @@ class UserProvider with ChangeNotifier {
 
     final Map<String, UserData> uniqueUsers = {};
 
-    // Mencari berdasarkan ShortID (Pencarian Eksak)
+    // Search by ShortID (Exact Match)
     QuerySnapshot idSnapshot = await _firestore
         .collection('users')
         .where('shortId', isEqualTo: upperQuery)
@@ -560,7 +564,7 @@ class UserProvider with ChangeNotifier {
       }
     }
 
-    // Mencari berdasarkan Username (Pencarian Partial)
+    // Search by Username (Partial Match)
     QuerySnapshot usernameSnapshot = await _firestore
         .collection('users')
         .where('username', isGreaterThanOrEqualTo: lowerCaseQuery)
@@ -578,7 +582,7 @@ class UserProvider with ChangeNotifier {
     return uniqueUsers.values.toList();
   }
 
-  // 2. Mengirim Permintaan Pertemanan
+  // 2. Send Friend Request
   Future<String?> sendFriendRequest(String recipientId) async {
     final currentUserId = _currentUser?.userId;
     final currentUsername = _currentUser?.username;
@@ -608,7 +612,7 @@ class UserProvider with ChangeNotifier {
     }
   }
 
-  // 3. Menangani Permintaan Pertemanan (Accept/Ignore) - MENGGUNAKAN WRITE BATCH
+  // 3. Handle Friend Request (Accept/Ignore) - USES WRITE BATCH
   Future<String?> handleFriendRequest(String senderId, String recipientId, bool accept) async {
     final batch = _firestore.batch();
 
@@ -617,43 +621,41 @@ class UserProvider with ChangeNotifier {
     final requestDocRef = recipientRef.collection('requests').doc(senderId);
 
     try {
-      // 1. Hapus dokumen permintaan
+      // 1. Delete the request document
       batch.delete(requestDocRef);
 
       if (accept) {
-        // 2. Tambahkan ID ke array 'friends' menggunakan FieldValue.arrayUnion()
+        // 2. Add IDs to the 'friends' array using FieldValue.arrayUnion()
 
-        // Update dokumen Penerima (Recipient)
+        // Update Recipient document
         batch.update(recipientRef, {
           'friends': FieldValue.arrayUnion([senderId])
         });
 
-        // Update dokumen Pengirim (Sender)
+        // Update Sender document
         batch.update(senderRef, {
           'friends': FieldValue.arrayUnion([recipientId])
         });
       }
 
-      // Commit semua operasi dalam batch
+      // Commit all operations in the batch
       await batch.commit();
 
-      // Update state lokal setelah commit berhasil
+      // Update local state after successful commit
       if (accept) {
-        // Memuat ulang data pengguna saat ini untuk memperbarui daftar teman secara lokal
-        // Ini penting agar daftar teman di UI segera diperbarui
+        // Reload current user data to update the local friends list immediately
         await fetchUserDataFromFirestore(recipientId);
       }
 
-      return null; // Sukses Accept atau Ignore
+      return null; // Success
 
     } catch (e) {
-      // Karena ini bukan Transaction, error di sini kemungkinan besar adalah Permission Denied.
       return 'Failed to process request: $e';
     }
   }
 
 
-  // --- LOGIKA KALKULASI BMI ---
+  // --- BMI CALCULATION LOGIC ---
 
   double calculateBMI() {
     if (_currentUser == null || _currentUser!.height <= 0 || _currentUser!.weight <= 0) {
@@ -667,7 +669,7 @@ class UserProvider with ChangeNotifier {
 
   String getBMICategory() {
     double bmi = calculateBMI();
-    if (bmi == 0.0) return "Data Belum Lengkap";
+    if (bmi == 0.0) return "Incomplete Data";
 
     if (bmi < 18.5) {
       return "Underweight";

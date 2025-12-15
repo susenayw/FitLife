@@ -1,4 +1,3 @@
-// lib/screens/recap_screen.dart
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
@@ -10,9 +9,9 @@ import '../models/workout_set.dart';
 class RecapScreen extends StatelessWidget {
   const RecapScreen({super.key});
 
-  // Widget untuk menampilkan aktivitas individu (dibuat terpisah agar kode build lebih rapi)
+  // Widget to display individual activity (separated for cleaner build code)
   Widget _buildActivityItem(WorkoutSet activity, int index, int totalItems) {
-    // Logika Ikon (Rope Jumping)
+    // Icon logic (handles Jump Rope special case)
     final icon = activity.name == 'Jump Rope'
         ? const Icon(Icons.accessibility_new, color: Colors.white, size: 40)
         : Icon(activity.iconData, color: Colors.white, size: 40);
@@ -30,7 +29,8 @@ class RecapScreen extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Set : ${activity.sets}',
+                    // Display Sets or Duration/Reps
+                    activity.type == 'Cardio' ? 'Duration : ${activity.repsOrDuration}s' : 'Sets : ${activity.sets}',
                     style: const TextStyle(color: Colors.white, fontSize: 16),
                   ),
                   Text(
@@ -40,7 +40,7 @@ class RecapScreen extends StatelessWidget {
                 ],
               ),
               const Spacer(),
-              // Kalori terbakar di samping
+              // Calories burned display
               Text(
                 '-${activity.caloriesBurned} Calories',
                 style: const TextStyle(color: Colors.redAccent, fontSize: 18, fontWeight: FontWeight.bold),
@@ -49,7 +49,7 @@ class RecapScreen extends StatelessWidget {
               const Icon(Icons.local_fire_department, color: Colors.redAccent, size: 20),
             ],
           ),
-          // Divider di antara item jika ada lebih dari satu
+          // Divider between items if there is more than one
           if (index < totalItems - 1)
             const Divider(color: Colors.white30, height: 25, indent: 60, endIndent: 20),
         ],
@@ -72,15 +72,15 @@ class RecapScreen extends StatelessWidget {
       }
     }
 
-    // Hitung total kalori terbakar hari ini
+    // Calculate total calories burned today
     int totalCaloriesBurned = recentActivities.fold(0, (sum, item) => sum + item.caloriesBurned);
 
     return Scaffold(
-      backgroundColor: const Color(0xFF640A0A), // Background sesuai tema Anda
+      backgroundColor: const Color(0xFF640A0A), // Background color matching theme
       body: SafeArea(
         child: Column(
           children: [
-            // --- HEADER RECAP ---
+            // --- HEADER RECAP CARD ---
             Container(
               padding: const EdgeInsets.all(16.0),
               margin: const EdgeInsets.all(16.0),
@@ -105,7 +105,7 @@ class RecapScreen extends StatelessWidget {
                       ),
                       const SizedBox(width: 15),
 
-                      // Nama Pengguna, Tanggal, dan RECAP Badge
+                      // User Name, Date, and RECAP Badge
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -137,7 +137,7 @@ class RecapScreen extends StatelessWidget {
                     ],
                   ),
                   const SizedBox(height: 15),
-                  // Total Kalori Terbakar
+                  // Total Calories Burned
                   Text(
                     '${totalCaloriesBurned} Calories Burned',
                     style: const TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold),
@@ -153,7 +153,7 @@ class RecapScreen extends StatelessWidget {
                 itemCount: recentActivities.length,
                 itemBuilder: (context, index) {
                   return Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16.0), // Padding disesuaikan
+                    padding: const EdgeInsets.symmetric(horizontal: 16.0),
                     child: _buildActivityItem(recentActivities[index], index, recentActivities.length),
                   );
                 },
@@ -178,7 +178,7 @@ class RecapScreen extends StatelessWidget {
                   Row(
                     children: [
                       Text(
-                        '${totalCaloriesBurned}', // Tampilkan total kalori
+                        '${totalCaloriesBurned}', // Display total calories
                         style: const TextStyle(color: Colors.redAccent, fontSize: 24, fontWeight: FontWeight.bold),
                       ),
                       const SizedBox(width: 5),
@@ -189,11 +189,11 @@ class RecapScreen extends StatelessWidget {
               ),
             ),
 
-            // --- BRANDING FITLIFE (Menggantikan Tombol Share) ---
+            // --- BRANDING FITLIFE ---
             const Padding(
               padding: EdgeInsets.only(bottom: 20.0),
               child: Text(
-                '#FitLife', // Teks pengganti tombol share
+                '#FitLife',
                 style: TextStyle(
                   color: Colors.white,
                   fontSize: 24,
@@ -203,15 +203,15 @@ class RecapScreen extends StatelessWidget {
               ),
             ),
 
-            // --- TOMBOL BACK (DIKEMBALIKAN) ---
+            // --- BACK BUTTON ---
             Align(
               alignment: Alignment.centerLeft,
               child: Padding(
                 padding: const EdgeInsets.only(left: 16.0, bottom: 16.0),
                 child: FloatingActionButton(
-                  heroTag: "backButtonRecap", // Penting jika ada FAB lain
+                  heroTag: "backButtonRecap", // Important if other FABs exist
                   onPressed: () {
-                    Navigator.pop(context); // Kembali ke layar sebelumnya
+                    Navigator.pop(context); // Go back to the previous screen
                   },
                   backgroundColor: Colors.black.withOpacity(0.5),
                   child: const Icon(Icons.arrow_back, color: Colors.white),

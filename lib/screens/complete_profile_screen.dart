@@ -1,4 +1,3 @@
-// lib/screens/complete_profile_screen.dart (KODE LENGKAP)
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:image_picker/image_picker.dart';
@@ -18,9 +17,9 @@ class CompleteProfileScreen extends StatefulWidget {
 class _CompleteProfileScreenState extends State<CompleteProfileScreen> {
   final TextEditingController _bioController = TextEditingController();
 
-  File? _imageFile; // Menyimpan file gambar untuk preview
+  File? _imageFile; // Stores the image file for preview
 
-  // --- FUNGSI Memilih Gambar (PATH LOKAL) ---
+  // --- FUNCTION to Pick Image (Local Path) ---
   Future<void> _pickImage() async {
     final pickedFile = await ImagePicker().pickImage(source: ImageSource.gallery);
 
@@ -29,19 +28,19 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> {
         _imageFile = File(pickedFile.path);
       });
 
-      // Simpan PATH LOKAL ke Provider/Firestore
+      // Save LOCAL PATH to Provider/Firestore
       Provider.of<UserProvider>(context, listen: false).updateProfilePicturePath(_imageFile!.path);
     }
   }
 
   void _onConfirmPressed() {
-    // 1. AKSES PROVIDER
+    // 1. ACCESS PROVIDER
     final userProvider = Provider.of<UserProvider>(context, listen: false);
 
-    // 2. Simpan Bio (Update Provider)
+    // 2. Save Bio (Update Provider)
     userProvider.updateBio(_bioController.text);
 
-    // 3. Navigasi ke Confirmation Screen
+    // 3. Navigate to Confirmation Screen
     Navigator.pushReplacementNamed(context, AppRoutes.confirmation);
   }
 
@@ -51,7 +50,7 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> {
     super.dispose();
   }
 
-  // Widget Pembantu untuk menampilkan info (Weight, Height, BMI)
+  // Helper Widget to display info (Weight, Height, BMI)
   Widget _buildInfoItem(String label, String value) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -70,30 +69,30 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // Hitung tinggi konten untuk memastikan Spacer bekerja
+    // Calculate content height to ensure Spacer works correctly
     final screenHeight = MediaQuery.of(context).size.height;
     final paddingTop = MediaQuery.of(context).padding.top;
     final paddingBottom = MediaQuery.of(context).padding.bottom;
     final contentHeight = screenHeight - paddingTop - paddingBottom;
 
-    // Akses data dari provider
+    // Access data from provider
     final userProvider = Provider.of<UserProvider>(context);
     final userData = userProvider.currentUser;
     final bmi = userProvider.calculateBMI();
     final bmiCategory = userProvider.getBMICategory();
 
-    // Data Default jika Provider kosong
-    final username = userData?.username ?? "Nama Pengguna";
+    // Default data if Provider is empty
+    final username = userData?.username ?? "User Name";
     final weight = userData?.weight.toStringAsFixed(0) ?? "0";
     final height = userData?.height.toStringAsFixed(0) ?? "0";
 
-    // --- LOGIKA GAMBAR PATH LOKAL ---
+    // --- LOCAL IMAGE PATH LOGIC ---
     File? profileImageFile;
-    // Prioritaskan gambar yang baru dipilih (_imageFile)
+    // Prioritize the newly selected image (_imageFile)
     if (_imageFile != null) {
       profileImageFile = _imageFile;
     }
-    // Jika tidak ada gambar baru, gunakan yang ada di provider (jika path ada dan file eksis)
+    // If no new image, use the one from the provider (if path exists and file is present)
     else if (userData?.profilePicturePath != null) {
       final file = File(userData!.profilePicturePath!);
       if (file.existsSync()) {
@@ -105,14 +104,14 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> {
     return Scaffold(
       body: Stack(
         children: [
-          // Background Image (Fallback ke warna merah tua)
+          // Background Color
           Positioned.fill(
             child: Container(color: const Color(0xFF640A0A)),
           ),
 
           SafeArea(
             child: SingleChildScrollView(
-              // PENTING: Batasi tinggi SingleChildScrollView agar Spacer berfungsi
+              // IMPORTANT: Restrict SingleChildScrollView height for Spacer to function
               child: SizedBox(
                 height: contentHeight,
                 child: Padding(
@@ -124,13 +123,13 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> {
                       const Text('FitLife', style: TextStyle(fontSize: 48, fontWeight: FontWeight.bold, color: Colors.white)),
                       const SizedBox(height: 30),
 
-                      // Bagian Header Profil (Preview Data)
+                      // Profile Header Section (Data Preview)
                       Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          // KOLOM GAMBAR PROFIL (Dapat Ditekan)
+                          // PROFILE IMAGE COLUMN (Tappable)
                           GestureDetector(
-                            onTap: _pickImage, // Panggil fungsi pick image saat ditekan
+                            onTap: _pickImage, // Call pick image function when tapped
                             child: SizedBox(
                               width: 90,
                               height: 90,
@@ -139,13 +138,13 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> {
                                   CircleAvatar(
                                     radius: 45,
                                     backgroundColor: Colors.white10,
-                                    // Menampilkan gambar yang dipilih, atau placeholder
+                                    // Display selected image, or placeholder
                                     backgroundImage: profileImageFile != null ? FileImage(profileImageFile!) : null,
                                     child: profileImageFile == null
                                         ? const Icon(Icons.person, color: Colors.white70, size: 50)
                                         : null,
                                   ),
-                                  // Ikon "Add Image"
+                                  // "Add Image" Icon
                                   const Positioned(
                                     bottom: 0,
                                     right: 0,
@@ -159,17 +158,17 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> {
                               ),
                             ),
                           ),
-                          // END KOLOM GAMBAR PROFIL
+                          // END PROFILE IMAGE COLUMN
 
                           const SizedBox(width: 20),
-                          // Kolom Data & BMI
+                          // Data & BMI Column
                           Expanded(
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(username, style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.white)),
                                 const SizedBox(height: 8),
-                                // Data Weight, Height, BMI
+                                // Weight, Height, BMI Data
                                 Row(
                                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                   children: [
@@ -179,7 +178,7 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> {
                                   ],
                                 ),
                                 const SizedBox(height: 15),
-                                // Klasifikasi BMI (Teks Kuning/Merah)
+                                // BMI Classification (Yellow/Green Text)
                                 Text(
                                   bmiCategory,
                                   style: TextStyle(
@@ -218,10 +217,10 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> {
                         ),
                       ),
 
-                      // SPACER: Mendorong tombol ke bawah
+                      // SPACER: Pushes buttons to the bottom
                       const Spacer(),
 
-                      // Tombol Confirm
+                      // Confirm Button
                       CustomButton(
                         text: 'Confirm',
                         onPressed: _onConfirmPressed,
@@ -230,11 +229,11 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> {
                       ),
                       const SizedBox(height: 16),
 
-                      // Tombol Back
+                      // Back Button
                       Center(
                         child: TextButton(
                           onPressed: () {
-                            Navigator.pop(context); // Kembali ke PersonalInfoScreen
+                            Navigator.pop(context); // Go back to PersonalInfoScreen
                           },
                           child: const Text(
                             'Back',
@@ -246,7 +245,7 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> {
                       // Footer
                       const Center(
                         child: Text(
-                          '© 2025 Kapal Lawd Cabang',
+                          '© 2025 Kapal Lawd Cabang', // Branding
                           style: TextStyle(fontSize: 12, color: Colors.white54),
                         ),
                       ),

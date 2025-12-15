@@ -1,5 +1,3 @@
-// lib/screens/forgot_password_screen.dart (KODE LENGKAP)
-
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/user_provider.dart';
@@ -29,21 +27,21 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
       return;
     }
 
-    // Panggil fungsi resetPassword dari provider
+    // Call resetPassword function from the provider
     final error = await Provider.of<UserProvider>(context, listen: false).resetPassword(email);
 
     if (error == null) {
-      // Sukses: Tampilkan notifikasi
+      // Success: Show notification
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Password reset link sent to $email.'),
           backgroundColor: Colors.green,
         ),
       );
-      // Kembali ke halaman login
+      // Return to the login page
       if (mounted) Navigator.pop(context);
     } else {
-      // Gagal: Tampilkan error
+      // Failure: Display error
       setState(() {
         _errorMessage = error;
       });

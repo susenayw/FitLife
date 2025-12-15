@@ -1,9 +1,7 @@
-// lib/models/workout_set.dart (KODE LENGKAP)
-
 import 'package:flutter/material.dart';
 
 class WorkoutSet {
-  final String id; // ID unik untuk Firestore
+  final String id; // Unique ID for Firestore
   final String name;
   final String type;
   int sets;
@@ -32,7 +30,7 @@ class WorkoutSet {
   // FIREBASE SERIALIZATION
   // ---------------------------------------------------
 
-  // Konversi objek WorkoutSet menjadi Map untuk Firestore
+  // Converts WorkoutSet object to a Map for Firestore storage
   Map<String, dynamic> toMap() {
     return {
       'name': name,
@@ -40,11 +38,11 @@ class WorkoutSet {
       'sets': sets,
       'repsOrDuration': repsOrDuration,
       'caloriesBurned': caloriesBurned,
-      'timestamp': DateTime.now().toIso8601String(), // Untuk sorting/tracking
+      'timestamp': DateTime.now().toIso8601String(), // Used for sorting/tracking
     };
   }
 
-  // Membuat objek WorkoutSet dari Map Firestore
+  // Creates a WorkoutSet object from a Firestore Map
   static WorkoutSet fromMap(String id, Map<String, dynamic> map) {
     return WorkoutSet(
       id: id,
@@ -56,7 +54,7 @@ class WorkoutSet {
     );
   }
 
-  // Metode copyWith untuk pembaruan
+  // copyWith method for updates
   WorkoutSet copyWith({
     String? id,
     String? name,

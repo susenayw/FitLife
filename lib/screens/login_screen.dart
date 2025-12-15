@@ -1,4 +1,3 @@
-// lib/screens/login_screen.dart (KODE LENGKAP - DIPERBARUI)
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/user_provider.dart';
@@ -16,16 +15,16 @@ class _LoginScreenState extends State<LoginScreen> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   bool _isPasswordVisible = false;
-  bool _isLoading = false; // Status loading
+  bool _isLoading = false; // Loading status
 
-  // --- HANDLER LOGIN EMAIL/PASS ---
+  // --- EMAIL/PASS LOGIN HANDLER ---
   void _performLogin() async {
     final email = _emailController.text;
     final password = _passwordController.text;
 
     if (email.isEmpty || password.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Masukkan E-mail dan Password.')),
+        const SnackBar(content: Text('Please enter E-mail and Password.')),
       );
       return;
     }
@@ -37,17 +36,17 @@ class _LoginScreenState extends State<LoginScreen> {
 
     if (errorMessage != null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Login Gagal: $errorMessage')),
+        SnackBar(content: Text('Login Failed: $errorMessage')),
       );
     } else {
-      // Navigasi ke MainScreen (di sini, atau biarkan StreamBuilder di main.dart)
+      // Navigate to MainScreen
       Navigator.pushReplacementNamed(context, AppRoutes.mainScreen);
     }
 
     setState(() => _isLoading = false);
   }
 
-  // --- HANDLER GOOGLE SIGN IN ---
+  // --- GOOGLE SIGN IN HANDLER ---
   void _signInWithGoogle() async {
     setState(() => _isLoading = true);
 
@@ -56,17 +55,17 @@ class _LoginScreenState extends State<LoginScreen> {
 
     if (errorMessage != null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Google Login Gagal: $errorMessage')),
+        SnackBar(content: Text('Google Login Failed: $errorMessage')),
       );
     } else {
-      // Navigasi ke MainScreen
+      // Navigate to MainScreen
       Navigator.pushReplacementNamed(context, AppRoutes.mainScreen);
     }
 
     setState(() => _isLoading = false);
   }
 
-  // Gaya input field yang seragam
+  // Uniform input field style
   InputDecoration _inputDecoration(String hintText, {Widget? suffixIcon}) {
     return InputDecoration(
       hintText: hintText,
@@ -99,7 +98,7 @@ class _LoginScreenState extends State<LoginScreen> {
     return Scaffold(
       body: Stack(
         children: [
-          // Background Image dengan Overlay
+          // Background Image with Overlay
           Positioned.fill(
             child: Image.asset(
               'assets/images/gym_room.png',
@@ -112,7 +111,7 @@ class _LoginScreenState extends State<LoginScreen> {
             ),
           ),
 
-          // Konten Utama di dalam SafeArea
+          // Main Content inside SafeArea
           SafeArea(
             child: SingleChildScrollView(
               child: SizedBox(
@@ -123,7 +122,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       const SizedBox(height: 50),
-                      // Judul/Logo
+                      // Title/Logo
                       const Center(
                         child: Text(
                           'FitLife',
@@ -170,12 +169,12 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                       ),
 
-                      // Tautan Lupa Password
+                      // Forgot Password Link
                       Align(
                         alignment: Alignment.centerRight,
                         child: TextButton(
                           onPressed: () {
-                            Navigator.pushNamed(context, AppRoutes.forgotPassword); // NAVIGASI BARU
+                            Navigator.pushNamed(context, AppRoutes.forgotPassword); // Navigate to Forgot Password
                           },
                           child: const Text(
                             'Forgot Password?',
@@ -185,10 +184,10 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
 
 
-                      // SPACER: Mendorong tombol ke bawah
+                      // SPACER: Pushes buttons to the bottom
                       const Spacer(),
 
-                      // Tombol Login
+                      // Login Button
                       _isLoading
                           ? const Center(child: CircularProgressIndicator(color: Colors.redAccent))
                           : CustomButton(
@@ -199,20 +198,20 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                       const SizedBox(height: 16),
 
-                      // Tombol Google
+                      // Google Button
                       CustomButton(
                         text: 'Login with Google',
-                        onPressed: _signInWithGoogle, // PANGGIL GOOGLE LOGIN
+                        onPressed: _signInWithGoogle, // Call Google Login Handler
                         backgroundColor: Colors.blueGrey.withOpacity(0.9),
                         textColor: Colors.white,
                       ),
                       const SizedBox(height: 16),
 
-                      // Tombol Cancel
+                      // Cancel Button
                       Center(
                         child: TextButton(
                           onPressed: () {
-                            Navigator.pop(context); // Kembali ke halaman HomeAuthScreen
+                            Navigator.pop(context); // Go back to HomeAuthScreen
                           },
                           child: const Text(
                             'Cancel',
@@ -224,7 +223,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       // Footer
                       const Center(
                         child: Text(
-                          '© 2025 Kapal Lawd Cabang',
+                          '© 2025 Kapal Lawd Cabang', // Branding
                           style: TextStyle(fontSize: 12, color: Colors.white54),
                         ),
                       ),

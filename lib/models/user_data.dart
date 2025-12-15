@@ -1,17 +1,15 @@
-// lib/models/user_data.dart (KODE LENGKAP)
-
 class UserData {
   String? userId;
   final String email;
   final String username;
-  final double weight; // dalam kg
-  final double height; // dalam cm
+  final double weight; // in kg
+  final double height; // in cm
   final String gender;
   final DateTime dateOfBirth;
   String? bio;
-  String? profilePicturePath; // Menyimpan path lokal (bukan URL Storage)
-  String? shortId; // Kode unik pendek
-  List<String>? friends; // DAFTAR ID TEMAN BARU
+  String? profilePicturePath; // Stores local path (not Storage URL)
+  String? shortId; // Short unique code
+  List<String>? friends; // List of friend IDs
 
   UserData({
     this.userId,
@@ -24,21 +22,22 @@ class UserData {
     this.bio,
     this.profilePicturePath,
     this.shortId,
-    this.friends, // Inisialisasi
+    this.friends,
   });
 
-  // Metode pembantu untuk mendapatkan usia
+  // Helper method to get the user's age
   int get age {
     final now = DateTime.now();
     int age = now.year - dateOfBirth.year;
-    // Kurangi 1 jika ulang tahun belum tiba tahun ini
+
+    // Decrement age if the birthday hasn't occurred this year yet
     if (now.month < dateOfBirth.month || (now.month == dateOfBirth.month && now.day < dateOfBirth.day)) {
       age--;
     }
     return age;
   }
 
-  // Metode copyWith untuk State Management yang efisien
+  // copyWith method for efficient State Management
   UserData copyWith({
     String? userId,
     String? email,
@@ -50,7 +49,7 @@ class UserData {
     String? bio,
     String? profilePicturePath,
     String? shortId,
-    List<String>? friends, // Tambahkan di copyWith
+    List<String>? friends,
   }) {
     return UserData(
       userId: userId ?? this.userId,
@@ -63,7 +62,7 @@ class UserData {
       bio: bio ?? this.bio,
       profilePicturePath: profilePicturePath ?? this.profilePicturePath,
       shortId: shortId ?? this.shortId,
-      friends: friends ?? this.friends, // Gunakan di sini
+      friends: friends ?? this.friends,
     );
   }
 }

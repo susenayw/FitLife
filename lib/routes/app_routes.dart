@@ -1,8 +1,6 @@
-// lib/routes/app_routes.dart (KODE LENGKAP - DIPERBARUI)
-
 import 'package:flutter/material.dart';
 
-// Import semua halaman yang akan digunakan sebagai rute
+// Import all pages to be used as routes
 import '../screens/home_auth_screen.dart';
 import '../screens/login_screen.dart';
 import '../screens/signup_screen.dart';
@@ -15,21 +13,21 @@ import '../screens/unified_activity_screen.dart';
 import '../screens/settings_screen.dart';
 import '../screens/free_run_screen.dart';
 import '../screens/social_screen.dart';
-// Import baru untuk Forgot Password
+// Import for Forgot Password
 import '../screens/forgot_password_screen.dart';
 
-// Rute bernama yang akan digunakan
+// Named routes to be used
 class AppRoutes {
-  static const String homeAuth = '/'; // Rute awal (Auth Gate)
+  static const String homeAuth = '/home-auth'; // Initial Auth Gate route
   static const String login = '/login';
   static const String signUp = '/signup';
   static const String personalInfo = '/personal-info';
   static const String completeProfile = '/complete-profile';
   static const String confirmation = '/confirmation';
   static const String mainScreen = '/main';
-  static const String forgotPassword = '/forgot-password'; // Rute baru
+  static const String forgotPassword = '/forgot-password'; // New route
 
-  // Rute Khusus
+  // Specific Feature Routes
   static const String unifiedActivity = '/activity';
   static const String recap = '/recap';
   static const String settings = '/settings';
@@ -37,7 +35,7 @@ class AppRoutes {
   static const String social = '/social';
 }
 
-// Map rute aplikasi
+// Application routes map
 final Map<String, WidgetBuilder> routes = {
   AppRoutes.homeAuth: (context) => const HomeAuthScreen(),
   AppRoutes.login: (context) => const LoginScreen(),
@@ -47,10 +45,10 @@ final Map<String, WidgetBuilder> routes = {
   AppRoutes.confirmation: (context) => const ConfirmationScreen(),
   AppRoutes.mainScreen: (context) => const MainScreen(),
 
-  // Rute baru
+  // New route
   AppRoutes.forgotPassword: (context) => const ForgotPasswordScreen(),
 
-  // Rute Khusus
+  // Specific Feature Routes
   AppRoutes.unifiedActivity: (context) => const UnifiedActivityScreen(),
   AppRoutes.recap: (context) => const RecapScreen(),
   AppRoutes.settings: (context) => const SettingsScreen(),

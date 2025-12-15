@@ -1,10 +1,9 @@
-// lib/screens/free_run_screen.dart
 import 'package:flutter/material.dart';
 import 'dart:async';
 import 'package:provider/provider.dart';
 import '../providers/user_provider.dart';
 
-// --- ENUM UNTUK STATUS LARI ---
+// --- ENUM FOR RUN STATUS ---
 enum RunStatus { initial, running, stopped }
 
 class FreeRunScreen extends StatefulWidget {
@@ -24,15 +23,15 @@ class _FreeRunScreenState extends State<FreeRunScreen> {
 
   final TextEditingController _distanceController = TextEditingController();
 
-  // --- LOGIKA TIMER ---
+  // --- TIMER LOGIC ---
   void _startRun() {
     if (_status == RunStatus.running) return;
 
-    // Reset jika sebelumnya sudah selesai/stop
+    // Reset if previously stopped/initial
     if (_status == RunStatus.stopped || _status == RunStatus.initial) {
       _secondsElapsed = 0;
       _caloriesBurned = 0.0;
-      // Jarak dipertahankan dari input manual, tapi harus divalidasi
+      // Distance is maintained from manual input, but must be validated
       _validateAndSetDistance();
     }
 
@@ -40,11 +39,11 @@ class _FreeRunScreenState extends State<FreeRunScreen> {
       _status = RunStatus.running;
     });
 
-    // Mulai timer setiap 1 detik
+    // Start timer every 1 second
     _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
       setState(() {
         _secondsElapsed++;
-        _calculateCalories(); // Hitung ulang kalori setiap detik
+        _calculateCalories(); // Recalculate calories every second
       });
     });
   }
@@ -53,10 +52,10 @@ class _FreeRunScreenState extends State<FreeRunScreen> {
     _timer?.cancel();
     setState(() {
       _status = RunStatus.stopped;
-      // Panggil perhitungan final setelah berhenti
+      // Call final calculation after stopping
       _calculateCalories();
     });
-    // Tampilkan SnackBar hasil akhir (opsional)
+    // Display final result SnackBar
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text('Run Finished! Calories Burned: ${_caloriesBurned.toStringAsFixed(1)} Kcal')),
     );
@@ -73,21 +72,21 @@ class _FreeRunScreenState extends State<FreeRunScreen> {
     });
   }
 
-  // --- LOGIKA KALKULASI MET ---
+  // --- MET CALCULATION LOGIC ---
   void _calculateCalories() {
-    // Ambil data dari UserProvider
+    // Get data from UserProvider
     final userProvider = Provider.of<UserProvider>(context, listen: false);
-    final weightKg = userProvider.currentUser?.weight ?? 70.0; // Default 70 kg jika data belum ada
+    final weightKg = userProvider.currentUser?.weight ?? 70.0; // Default 70 kg if data is missing
 
-    // Waktu dalam jam
-    final timeHours = _secondsElapsed / 3600.0; // 3600 detik = 1 jam
+    // Time in hours
+    final timeHours = _secondsElapsed / 3600.0; // 3600 seconds = 1 hour
 
-    // 1. Tentukan Nilai MET
-    // Asumsi lari sedang (MET 9.8)
+    // 1. Determine MET Value
+    // Assume moderate running (MET 9.8)
     const double metValue = 9.8;
 
-    // 2. Kalkulasi
-    // Rumus: Kalori Terbakar = (MET × Berat Badan (kg) × Waktu (jam)) × 1.05
+    // 2. Calculation
+    // Formula: Calories Burned = (MET × Body Weight (kg) × Time (hours)) × 1.05
     double calories = (metValue * weightKg * timeHours) * 1.05;
 
     setState(() {
@@ -95,17 +94,18 @@ class _FreeRunScreenState extends State<FreeRunScreen> {
     });
   }
 
-  // --- LOGIKA INPUT JARAK MANUAL ---
+  // --- MANUAL DISTANCE INPUT LOGIC ---
   void _validateAndSetDistance() {
     final double? inputDistance = double.tryParse(_distanceController.text);
     if (inputDistance != null && inputDistance > 0) {
+      // Input is in meters
       _distanceMeters = inputDistance;
     } else {
-      _distanceMeters = 0.0; // Jarak default jika input kosong/invalid
+      _distanceMeters = 0.0; // Default distance if input is empty/invalid
     }
   }
 
-  // Listener untuk perubahan input
+  // Listener for input changes
   @override
   void initState() {
     super.initState();
@@ -120,7 +120,7 @@ class _FreeRunScreenState extends State<FreeRunScreen> {
     super.dispose();
   }
 
-  // --- WIDGET PEMBANTU ---
+  // --- HELPER WIDGETS ---
   String _formatTime(int totalSeconds) {
     final int hours = totalSeconds ~/ 3600;
     final int minutes = (totalSeconds % 3600) ~/ 60;
@@ -133,17 +133,17 @@ class _FreeRunScreenState extends State<FreeRunScreen> {
     return '$hoursStr:$minutesStr:$secondsStr';
   }
 
-  // --- WIDGET UTAMA (MAIN BUILD) ---
+  // --- MAIN BUILD WIDGET ---
   @override
   Widget build(BuildContext context) {
-    // Konsumsi UserProvider untuk mendapatkan Berat Badan
+    // Consume UserProvider to get Body Weight
     final userProvider = Provider.of<UserProvider>(context);
-    final weightKg = userProvider.currentUser?.weight.toStringAsFixed(0) ?? '70'; // Tampilkan berat badan pengguna
+    final weightKg = userProvider.currentUser?.weight.toStringAsFixed(0) ?? '70'; // Display user's body weight
 
     final runDataContent = Column(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        // Judul Screen
+        // Screen Title
         const Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
@@ -167,10 +167,10 @@ class _FreeRunScreenState extends State<FreeRunScreen> {
         ),
         SizedBox(height: MediaQuery.of(context).size.height * 0.05),
 
-        // Distance (Jarak)
+        // Distance
         const Text('Distance', style: TextStyle(fontSize: 30, color: Colors.white70)),
 
-        // Input Jarak (Muncul saat INITIAL/STOPPED)
+        // Distance Input (Shown when INITIAL/STOPPED)
         if (_status != RunStatus.running)
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 60.0),
@@ -194,9 +194,10 @@ class _FreeRunScreenState extends State<FreeRunScreen> {
               ),
             ),
           )
-        // Display Jarak (Muncul saat RUNNING)
+        // Distance Display (Shown when RUNNING)
         else
           Text(
+            // NOTE: Distance is based on manual input until GPS/Pedometer integration is added
             '${_distanceMeters.toStringAsFixed(0)}M',
             style: const TextStyle(
               fontSize: 48,
@@ -208,7 +209,7 @@ class _FreeRunScreenState extends State<FreeRunScreen> {
 
         SizedBox(height: MediaQuery.of(context).size.height * 0.05),
 
-        // Tombol Start/Stop/Reset
+        // Start/Stop/Reset Button
         SizedBox(
           width: 200,
           child: _status == RunStatus.running
@@ -255,7 +256,7 @@ class _FreeRunScreenState extends State<FreeRunScreen> {
         ),
         const SizedBox(height: 10),
 
-        // Info Berat Badan
+        // Body Weight Info
         Text(
           '(Based on ${_caloriesBurned > 0 ? "running time and" : ""} ${weightKg}kg body weight)',
           style: const TextStyle(fontSize: 10, color: Colors.white54),
@@ -265,15 +266,15 @@ class _FreeRunScreenState extends State<FreeRunScreen> {
     );
 
     return Scaffold(
-      backgroundColor: const Color(0xFF640A0A), // Warna merah tua
+      backgroundColor: const Color(0xFF640A0A),
       body: SafeArea(
-          child: SingleChildScrollView( // PERBAIKAN: Membungkus konten agar dapat digulir
-      child: Padding(
-      padding: const EdgeInsets.all(20.0),
-      child: runDataContent,
-    ),
-    ),
-    ),
+        child: SingleChildScrollView( // WRAP content to allow scrolling on small screens
+          child: Padding(
+            padding: const EdgeInsets.all(20.0),
+            child: runDataContent,
+          ),
+        ),
+      ),
     );
   }
 }

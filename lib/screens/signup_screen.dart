@@ -1,4 +1,3 @@
-// lib/screens/signup_screen.dart (KODE LENGKAP - DIPERBARUI DENGAN LOGIKA NEW_USER)
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../widgets/custom_button.dart';
@@ -21,7 +20,7 @@ class _SignupScreenState extends State<SignupScreen> {
   bool _isConfirmPasswordVisible = false;
   bool _isLoading = false;
 
-  // --- HANDLER SIGN UP EMAIL/PASS ---
+  // --- EMAIL/PASS SIGN UP HANDLER ---
   void _performSignup() async {
     final password = _passwordController.text;
     final confirmPassword = _confirmPasswordController.text;
@@ -29,14 +28,14 @@ class _SignupScreenState extends State<SignupScreen> {
 
     if (email.isEmpty || password.isEmpty || confirmPassword.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Semua kolom harus diisi.')),
+        const SnackBar(content: Text('All fields must be filled.')),
       );
       return;
     }
 
     if (password != confirmPassword) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Password dan Konfirmasi Password tidak cocok.')),
+        const SnackBar(content: Text('Password and Confirm Password do not match.')),
       );
       return;
     }
@@ -48,36 +47,36 @@ class _SignupScreenState extends State<SignupScreen> {
 
     if (errorMessage != null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Sign Up Gagal: $errorMessage')),
+        SnackBar(content: Text('Sign Up Failed: $errorMessage')),
       );
     } else {
-      // NAVIGASI DARI SIGN UP EMAIL KE PERSONAL INFO SCREEN
+      // NAVIGATE FROM EMAIL SIGN UP TO PERSONAL INFO SCREEN
       Navigator.pushNamed(context, AppRoutes.personalInfo);
     }
 
     setState(() => _isLoading = false);
   }
 
-  // --- HANDLER GOOGLE SIGN UP ---
+  // --- GOOGLE SIGN UP HANDLER ---
   void _signUpWithGoogle() async {
     setState(() => _isLoading = true);
 
     final userProvider = Provider.of<UserProvider>(context, listen: false);
-    // Menerima hasil (bisa null, error message, atau 'NEW_USER')
+    // Result can be null (success), an error message, or 'NEW_USER' flag
     final result = await userProvider.signInWithGoogle();
 
     if (result != null && result != 'NEW_USER') {
-      // Gagal Sign Up/In, dan bukan flag NEW_USER
+      // Failed Sign Up/In, and not the NEW_USER flag
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Google Sign Up Gagal: $result')),
+        SnackBar(content: Text('Google Sign Up Failed: $result')),
       );
     } else {
-      // Sukses (result adalah null atau 'NEW_USER')
+      // Success (result is null or 'NEW_USER')
       if (result == 'NEW_USER') {
-        // PENGGUNA BARU: Arahkan ke Personal Info Screen
+        // NEW USER: Navigate to Personal Info Screen
         Navigator.pushReplacementNamed(context, AppRoutes.personalInfo);
       } else {
-        // PENGGUNA LAMA: Arahkan ke Main Screen
+        // EXISTING USER: Navigate to Main Screen
         Navigator.pushReplacementNamed(context, AppRoutes.mainScreen);
       }
     }
@@ -85,7 +84,7 @@ class _SignupScreenState extends State<SignupScreen> {
     setState(() => _isLoading = false);
   }
 
-  // Gaya input field yang seragam
+  // Uniform input field style
   InputDecoration _inputDecoration(String hintText, {Widget? suffixIcon}) {
     return InputDecoration(
       hintText: hintText,
@@ -132,7 +131,7 @@ class _SignupScreenState extends State<SignupScreen> {
             ),
           ),
 
-          // Konten Utama di dalam SafeArea dan SingleChildScrollView
+          // Main Content inside SafeArea and SingleChildScrollView
           SafeArea(
             child: SingleChildScrollView(
               child: SizedBox(
@@ -143,7 +142,7 @@ class _SignupScreenState extends State<SignupScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       const SizedBox(height: 50),
-                      // Judul/Logo
+                      // Title/Logo
                       const Center(
                         child: Text(
                           'FitLife',
@@ -164,17 +163,37 @@ class _SignupScreenState extends State<SignupScreen> {
 
                       const Text('Password', style: TextStyle(color: Colors.white, fontSize: 18)),
                       const SizedBox(height: 8),
-                      TextField(controller: _passwordController, obscureText: !_isPasswordVisible, style: const TextStyle(color: Colors.white), decoration: _inputDecoration('********', suffixIcon: IconButton(icon: Icon(_isPasswordVisible ? Icons.visibility : Icons.visibility_off, color: Colors.white70), onPressed: () {setState(() {_isPasswordVisible = !_isPasswordVisible;});}))),
+                      TextField(
+                          controller: _passwordController,
+                          obscureText: !_isPasswordVisible,
+                          style: const TextStyle(color: Colors.white),
+                          decoration: _inputDecoration('********',
+                              suffixIcon: IconButton(
+                                  icon: Icon(_isPasswordVisible ? Icons.visibility : Icons.visibility_off, color: Colors.white70),
+                                  onPressed: () {setState(() {_isPasswordVisible = !_isPasswordVisible;});}
+                              )
+                          )
+                      ),
                       const SizedBox(height: 25),
 
                       const Text('Confirm Password', style: TextStyle(color: Colors.white, fontSize: 18)),
                       const SizedBox(height: 8),
-                      TextField(controller: _confirmPasswordController, obscureText: !_isConfirmPasswordVisible, style: const TextStyle(color: Colors.white), decoration: _inputDecoration('********', suffixIcon: IconButton(icon: Icon(_isConfirmPasswordVisible ? Icons.visibility : Icons.visibility_off, color: Colors.white70), onPressed: () {setState(() {_isConfirmPasswordVisible = !_isConfirmPasswordVisible;});}))),
+                      TextField(
+                          controller: _confirmPasswordController,
+                          obscureText: !_isConfirmPasswordVisible,
+                          style: const TextStyle(color: Colors.white),
+                          decoration: _inputDecoration('********',
+                              suffixIcon: IconButton(
+                                  icon: Icon(_isConfirmPasswordVisible ? Icons.visibility : Icons.visibility_off, color: Colors.white70),
+                                  onPressed: () {setState(() {_isConfirmPasswordVisible = !_isConfirmPasswordVisible;});}
+                              )
+                          )
+                      ),
 
-                      // SPACER: Mendorong semua konten di bawahnya ke bawah
+                      // SPACER: Pushes all content below to the bottom
                       const Spacer(),
 
-                      // Tombol Next (Sign Up)
+                      // Next Button (Sign Up)
                       _isLoading
                           ? const Center(child: CircularProgressIndicator(color: Colors.redAccent))
                           : CustomButton(
@@ -185,7 +204,7 @@ class _SignupScreenState extends State<SignupScreen> {
                       ),
                       const SizedBox(height: 16),
 
-                      // Tombol Google
+                      // Google Button
                       CustomButton(
                         text: 'Sign Up with Google',
                         onPressed: _signUpWithGoogle,
@@ -194,7 +213,7 @@ class _SignupScreenState extends State<SignupScreen> {
                       ),
                       const SizedBox(height: 16),
 
-                      // Tombol Cancel
+                      // Cancel Button
                       Center(
                         child: TextButton(
                           onPressed: () {
@@ -207,10 +226,10 @@ class _SignupScreenState extends State<SignupScreen> {
                         ),
                       ),
 
-                      // Footer (Tepat di atas bottom padding)
+                      // Footer (Just above bottom padding)
                       const Center(
                         child: Text(
-                          '© 2025 Kapal Lawd Cabang',
+                          '© 2025 Kapal Lawd Cabang', // Branding
                           style: TextStyle(fontSize: 12, color: Colors.white54),
                         ),
                       ),
