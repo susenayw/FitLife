@@ -7,6 +7,8 @@ import 'package:firebase_auth/firebase_auth.dart';
 
 // Import Screens, Providers, dan Routes
 import 'package:fitlifeapp/providers/user_provider.dart';
+// Tambahkan Import ChatProvider
+import 'package:fitlifeapp/providers/chat_provider.dart';
 import 'package:fitlifeapp/routes/app_routes.dart';
 
 void main() async {
@@ -25,9 +27,13 @@ void main() async {
   );
 
   runApp(
-    // Menginisialisasi Provider di tingkat tertinggi
-    ChangeNotifierProvider(
-      create: (context) => UserProvider(),
+    // Mengubah ke MultiProvider untuk menampung UserProvider dan ChatProvider
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (context) => UserProvider()),
+        // Menambahkan ChatProvider
+        ChangeNotifierProvider(create: (context) => ChatProvider()),
+      ],
       child: const FitLifeApp(),
     ),
   );

@@ -6,6 +6,9 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import '../providers/user_provider.dart';
 import '../models/user_data.dart';
 import 'package:flutter/foundation.dart';
+// Import ChatProvider yang baru
+import '../providers/chat_provider.dart';
+
 
 // =======================================================
 // A. DATA MODEL TEMPORER & CHAT DETAIL SCREEN
@@ -20,10 +23,43 @@ class FriendDisplay {
   FriendDisplay({required this.userId, required this.username, this.isOnline = true});
 }
 
-// CHAT DETAIL SCREEN
-class ChatDetailScreen extends StatelessWidget {
+// CHAT DETAIL SCREEN BARU
+class ChatDetailScreen extends StatefulWidget {
   final FriendDisplay friend;
-  const ChatDetailScreen({super.key, required this.friend});
+  final String currentUserId; // ID pengguna saat ini
+
+  const ChatDetailScreen({
+    super.key,
+    required this.friend,
+    required this.currentUserId,
+  });
+
+  @override
+  State<ChatDetailScreen> createState() => _ChatDetailScreenState();
+}
+
+class _ChatDetailScreenState extends State<ChatDetailScreen> {
+  final TextEditingController _messageController = TextEditingController();
+
+  void _sendMessage() async {
+    if (_messageController.text.isNotEmpty) {
+      final content = _messageController.text;
+
+      // Panggil ChatProvider untuk mengirim pesan
+      await Provider.of<ChatProvider>(context, listen: false).sendMessage(
+        recipientId: widget.friend.userId,
+        content: content,
+      );
+
+      _messageController.clear();
+    }
+  }
+
+  @override
+  void dispose() {
+    _messageController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -41,19 +77,19 @@ class ChatDetailScreen extends StatelessWidget {
             CircleAvatar(
               radius: 18,
               backgroundColor: Colors.white24,
-              child: Icon(Icons.person, color: friend.isOnline ? Colors.greenAccent : Colors.white70, size: 20),
+              child: Icon(Icons.person, color: widget.friend.isOnline ? Colors.greenAccent : Colors.white70, size: 20),
             ),
             const SizedBox(width: 10),
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  friend.username,
+                  widget.friend.username,
                   style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
                 ),
                 Text(
-                  friend.isOnline ? 'Online' : 'Offline',
-                  style: TextStyle(color: friend.isOnline ? Colors.greenAccent : Colors.white54, fontSize: 12),
+                  widget.friend.isOnline ? 'Online' : 'Offline',
+                  style: TextStyle(color: widget.friend.isOnline ? Colors.greenAccent : Colors.white54, fontSize: 12),
                 ),
               ],
             ),
@@ -67,14 +103,59 @@ class ChatDetailScreen extends StatelessWidget {
 
       body: Column(
         children: [
-          const Expanded(
-            child: Center(
-              child: Text(
-                'Start chatting!',
-                style: TextStyle(color: Colors.white54, fontSize: 16),
-              ),
+          // Bagian untuk menampilkan pesan
+          Expanded(
+            child: Consumer<ChatProvider>(
+              builder: (context, chatProvider, child) {
+                return StreamBuilder<QuerySnapshot>(
+                  stream: chatProvider.getMessages(widget.friend.userId),
+                  builder: (context, snapshot) {
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return const Center(child: CircularProgressIndicator(color: Colors.white));
+                    }
+                    if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+                      return const Center(
+                        child: Text('Start chatting!', style: TextStyle(color: Colors.white54, fontSize: 16)),
+                      );
+                    }
+
+                    final messages = snapshot.data!.docs;
+
+                    return ListView.builder(
+                      reverse: true, // Pesan terbaru di bawah
+                      itemCount: messages.length,
+                      itemBuilder: (context, index) {
+                        final message = messages[index].data() as Map<String, dynamic>;
+                        final isMe = message['senderId'] == widget.currentUserId;
+
+                        return Align(
+                          alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
+                          child: Container(
+                            margin: const EdgeInsets.symmetric(vertical: 4.0, horizontal: 8.0),
+                            padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 15),
+                            decoration: BoxDecoration(
+                              color: isMe ? Colors.redAccent.shade700 : const Color(0xFF1C1C1C),
+                              borderRadius: BorderRadius.only(
+                                topLeft: const Radius.circular(15),
+                                topRight: const Radius.circular(15),
+                                bottomLeft: isMe ? const Radius.circular(15) : const Radius.circular(0),
+                                bottomRight: isMe ? const Radius.circular(0) : const Radius.circular(15),
+                              ),
+                            ),
+                            child: Text(
+                              message['content'] ?? '',
+                              style: const TextStyle(color: Colors.white),
+                            ),
+                          ),
+                        );
+                      },
+                    );
+                  },
+                );
+              },
             ),
           ),
+
           // Input Bar Chat di bagian bawah
           Padding(
             padding: const EdgeInsets.all(8.0),
@@ -88,17 +169,22 @@ class ChatDetailScreen extends StatelessWidget {
                       color: const Color(0xFF1C1C1C),
                       borderRadius: BorderRadius.circular(20),
                     ),
-                    child: const TextField(
-                      style: TextStyle(color: Colors.white),
-                      decoration: InputDecoration(
+                    child: TextField(
+                      controller: _messageController, // Tambahkan controller
+                      style: const TextStyle(color: Colors.white),
+                      decoration: const InputDecoration(
                         hintText: 'Type your message...',
                         hintStyle: TextStyle(color: Colors.white54),
                         border: InputBorder.none,
                       ),
+                      onSubmitted: (_) => _sendMessage(), // Kirim saat Enter
                     ),
                   ),
                 ),
-                IconButton(icon: const Icon(Icons.send, color: Colors.redAccent), onPressed: () {}),
+                IconButton(
+                  icon: const Icon(Icons.send, color: Colors.redAccent),
+                  onPressed: _sendMessage, // Panggil fungsi kirim
+                ),
               ],
             ),
           ),
@@ -288,6 +374,7 @@ class _FriendsTabState extends State<_FriendsTab> {
               itemCount: listToShow.length,
               itemBuilder: (context, index) {
                 final item = listToShow[index];
+                final currentUserId = userProvider.currentUser?.userId;
 
                 if (inSearchMode) {
                   // Tampilan untuk Hasil Pencarian (UserData)
@@ -313,10 +400,15 @@ class _FriendsTabState extends State<_FriendsTab> {
                       icon: const Icon(Icons.chat_bubble_outline, color: Colors.white70),
                       onPressed: () {
                         // Navigasi ke Halaman Chat Detail
+                        if (currentUserId == null) return;
+
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (ctx) => ChatDetailScreen(friend: friend),
+                            builder: (ctx) => ChatDetailScreen(
+                              friend: friend,
+                              currentUserId: currentUserId,
+                            ),
                           ),
                         );
                       },
