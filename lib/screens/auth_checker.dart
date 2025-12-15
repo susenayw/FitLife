@@ -1,4 +1,4 @@
-// lib/main.dart (FINAL CODE WITH CORRECTED AUTH CHECKER LOGIC FOR PERSISTENT LOGIN)
+// lib/main.dart (FINAL CODE WITH CORRECTED ROUTE NAME)
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
@@ -15,18 +15,14 @@ import 'package:fitlifeapp/routes/app_routes.dart' as routes_map;
 
 
 // ====================================================================
-// AUTH CHECKER WIDGET (FIXED: Returns Target Widget Instead of Navigating)
+// AUTH CHECKER WIDGET (CORRECTED ROUTE: AppRoutes.mainScreen)
 // ====================================================================
 class AuthChecker extends StatelessWidget {
   const AuthChecker({super.key});
 
   @override
   Widget build(BuildContext context) {
-    // Manually get the screen widget constructors from the routes map
-    // We fetch the widget function and call it immediately to get the widget instance.
-    final Widget mainScreen = routes_map.routes[AppRoutes.mainScreen]!(context);
-    final Widget authScreen = routes_map.routes[AppRoutes.homeAuth]!(context);
-
+    // Listen to the Firebase Auth state changes
     return StreamBuilder<User?>(
       stream: FirebaseAuth.instance.authStateChanges(),
       builder: (context, snapshot) {
@@ -45,7 +41,7 @@ class AuthChecker extends StatelessWidget {
 
         // 2. User Logged In (Persistent Session Found)
         if (user != null) {
-          // Load user data once and return the main screen when done.
+          // If the persistent session is found, we need to load the user's Firestore data.
           return FutureBuilder<void>(
             future: Provider.of<UserProvider>(context, listen: false)
                 .fetchUserDataFromFirestore(user.uid),
@@ -59,14 +55,25 @@ class AuthChecker extends StatelessWidget {
                         child: CircularProgressIndicator(color: Colors.white)));
               }
 
-              // FIX: Directly return the Main Screen Widget
-              return mainScreen;
+              // Data loaded, navigate immediately to the main app screen.
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                // **CORRECTED LINE:** Using AppRoutes.mainScreen
+                Navigator.of(context).pushReplacementNamed(AppRoutes.mainScreen);
+              });
+
+              // Return a placeholder while navigation is pending
+              return const SizedBox.shrink();
             },
           );
         } else {
           // 3. User Not Logged In
-          // FIX: Directly return the Auth Screen Widget
-          return authScreen;
+          // Navigate immediately to the authentication screen.
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            Navigator.of(context).pushReplacementNamed(AppRoutes.homeAuth);
+          });
+
+          // Return a placeholder while navigation is pending
+          return const SizedBox.shrink();
         }
       },
     );
@@ -79,7 +86,6 @@ void main() async {
 
   // FIREBASE INITIALIZATION
   try {
-    // NOTE: If you are using default flutterfire options, you might need to specify them here
     await Firebase.initializeApp();
   } catch (e) {
     print('Firebase initialization failed: $e');
@@ -138,9 +144,6 @@ class FitLifeApp extends StatelessWidget {
         ...routes_map.routes,
         '/': (context) => const AuthChecker(),
       },
-
-      // IMPORTANT: The AuthChecker logic handles the initial display and navigation,
-      // ensuring persistent login works correctly without flickering.
     );
   }
 }
