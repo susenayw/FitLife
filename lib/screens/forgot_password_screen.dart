@@ -24,7 +24,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
 
     if (email.isEmpty) {
       setState(() {
-        _errorMessage = 'Email tidak boleh kosong.';
+        _errorMessage = "Email can't be empty.";
       });
       return;
     }
@@ -36,7 +36,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
       // Sukses: Tampilkan notifikasi
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Tautan reset password telah dikirim ke $email.'),
+          content: Text('Password reset link sent to $email.'),
           backgroundColor: Colors.green,
         ),
       );
@@ -60,7 +60,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Lupa Kata Sandi', style: TextStyle(color: Colors.white)),
+        title: const Text('Forgot Password', style: TextStyle(color: Colors.white)),
         backgroundColor: Colors.black,
         iconTheme: const IconThemeData(color: Colors.white),
       ),
@@ -70,7 +70,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             const Text(
-              'Masukkan alamat email Anda untuk menerima tautan pemulihan kata sandi.',
+              'Enter you email to receive a password reset link.',
               style: TextStyle(color: Colors.white70, fontSize: 16),
             ),
             const SizedBox(height: 30),
@@ -105,7 +105,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                 padding: const EdgeInsets.symmetric(vertical: 15),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
               ),
-              child: const Text('Kirim Tautan Pemulihan', style: TextStyle(color: Colors.white, fontSize: 18)),
+              child: const Text('Send Reset Password Link', style: TextStyle(color: Colors.white, fontSize: 18)),
             ),
           ],
         ),

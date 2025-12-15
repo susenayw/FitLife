@@ -10,6 +10,53 @@ import '../models/workout_set.dart';
 class RecapScreen extends StatelessWidget {
   const RecapScreen({super.key});
 
+  // Widget untuk menampilkan aktivitas individu (dibuat terpisah agar kode build lebih rapi)
+  Widget _buildActivityItem(WorkoutSet activity, int index, int totalItems) {
+    // Logika Ikon (Rope Jumping)
+    final icon = activity.name == 'Jump Rope'
+        ? const Icon(Icons.accessibility_new, color: Colors.white, size: 40)
+        : Icon(activity.iconData, color: Colors.white, size: 40);
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 15.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              icon,
+              const SizedBox(width: 15),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Set : ${activity.sets}',
+                    style: const TextStyle(color: Colors.white, fontSize: 16),
+                  ),
+                  Text(
+                    activity.name,
+                    style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
+                  ),
+                ],
+              ),
+              const Spacer(),
+              // Kalori terbakar di samping
+              Text(
+                '-${activity.caloriesBurned} Calories',
+                style: const TextStyle(color: Colors.redAccent, fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(width: 5),
+              const Icon(Icons.local_fire_department, color: Colors.redAccent, size: 20),
+            ],
+          ),
+          // Divider di antara item jika ada lebih dari satu
+          if (index < totalItems - 1)
+            const Divider(color: Colors.white30, height: 25, indent: 60, endIndent: 20),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final userProvider = Provider.of<UserProvider>(context);
@@ -105,50 +152,9 @@ class RecapScreen extends StatelessWidget {
                 padding: const EdgeInsets.symmetric(horizontal: 16.0),
                 itemCount: recentActivities.length,
                 itemBuilder: (context, index) {
-                  final activity = recentActivities[index];
-
-                  // Logika Ikon (Rope Jumping)
-                  final icon = activity.name == 'Jump Rope'
-                      ? const Icon(Icons.accessibility_new, color: Colors.white, size: 40)
-                      : Icon(activity.iconData, color: Colors.white, size: 40);
-
                   return Padding(
-                    padding: const EdgeInsets.only(bottom: 15.0),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            icon,
-                            const SizedBox(width: 15),
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  'Set : ${activity.sets}',
-                                  style: const TextStyle(color: Colors.white, fontSize: 16),
-                                ),
-                                Text(
-                                  activity.name,
-                                  style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
-                                ),
-                              ],
-                            ),
-                            const Spacer(),
-                            // Kalori terbakar di samping
-                            Text(
-                              '-${activity.caloriesBurned} Calories',
-                              style: const TextStyle(color: Colors.redAccent, fontSize: 18, fontWeight: FontWeight.bold),
-                            ),
-                            const SizedBox(width: 5),
-                            const Icon(Icons.local_fire_department, color: Colors.redAccent, size: 20),
-                          ],
-                        ),
-                        // Divider di antara item jika ada lebih dari satu
-                        if (index < recentActivities.length - 1)
-                          const Divider(color: Colors.white30, height: 25, indent: 60, endIndent: 20),
-                      ],
-                    ),
+                    padding: const EdgeInsets.symmetric(horizontal: 16.0), // Padding disesuaikan
+                    child: _buildActivityItem(recentActivities[index], index, recentActivities.length),
                   );
                 },
               ),
@@ -182,38 +188,28 @@ class RecapScreen extends StatelessWidget {
                 ],
               ),
             ),
-            const SizedBox(height: 10),
 
-            // --- SHARE BUTTON ---
-            Container(
-              width: double.infinity,
-              margin: const EdgeInsets.symmetric(horizontal: 16.0),
-              child: ElevatedButton.icon(
-                onPressed: () {
-                  // TODO: Implementasi fungsi share
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Share functionality coming soon!')),
-                  );
-                },
-                icon: const Icon(Icons.share, color: Colors.black),
-                label: const Text('Share', style: TextStyle(color: Colors.black, fontSize: 18)),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(15),
-                  ),
-                  padding: const EdgeInsets.symmetric(vertical: 15),
+            // --- BRANDING FITLIFE (Menggantikan Tombol Share) ---
+            const Padding(
+              padding: EdgeInsets.only(bottom: 20.0),
+              child: Text(
+                '#FitLife', // Teks pengganti tombol share
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                  fontStyle: FontStyle.italic,
                 ),
               ),
             ),
-            const SizedBox(height: 20),
 
-            // --- BACK BUTTON ---
+            // --- TOMBOL BACK (DIKEMBALIKAN) ---
             Align(
-              alignment: Alignment.bottomLeft,
+              alignment: Alignment.centerLeft,
               child: Padding(
                 padding: const EdgeInsets.only(left: 16.0, bottom: 16.0),
                 child: FloatingActionButton(
+                  heroTag: "backButtonRecap", // Penting jika ada FAB lain
                   onPressed: () {
                     Navigator.pop(context); // Kembali ke layar sebelumnya
                   },

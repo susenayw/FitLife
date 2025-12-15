@@ -1,4 +1,4 @@
-// lib/screens/settings_screen.dart (KODE LENGKAP - DENGAN FUNGSI CHANGE PASSWORD NYATA)
+// lib/screens/settings_screen.dart (KODE LENGKAP - DENGAN LOGIKA KONDISIONAL GOOGLE USER)
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -310,7 +310,7 @@ class _EditProfileFullScreenState extends State<EditProfileFullScreen> {
 }
 
 // =======================================================
-// C. ACCOUNT FULL SCREEN (IMPLEMENTASI CHANGE PASSWORD NYATA)
+// C. ACCOUNT FULL SCREEN (IMPLEMENTASI LOGIKA KONDISIONAL GOOGLE USER)
 // =======================================================
 
 class AccountFullScreen extends StatefulWidget {
@@ -323,12 +323,12 @@ class AccountFullScreen extends StatefulWidget {
 class _AccountFullScreenState extends State<AccountFullScreen> {
   final TextEditingController _oldPasswordController = TextEditingController();
   final TextEditingController _newPasswordController = TextEditingController();
-  final TextEditingController _confirmPasswordController = TextEditingController(); // TAMBAH: Konfirmasi Password
+  final TextEditingController _confirmPasswordController = TextEditingController();
 
   bool _isLoading = false;
   String? _errorMessage;
 
-  // --- FUNGSI BARU: MENGUBAH PASSWORD SECARA NYATA ---
+  // --- FUNGSI MENGUBAH PASSWORD SECARA NYATA ---
   void _changePassword() async {
     final userProvider = Provider.of<UserProvider>(context, listen: false);
     final email = userProvider.currentUser?.email;
@@ -414,7 +414,7 @@ class _AccountFullScreenState extends State<AccountFullScreen> {
   void dispose() {
     _oldPasswordController.dispose();
     _newPasswordController.dispose();
-    _confirmPasswordController.dispose(); // DISPOSE CONFIRM PASSWORD
+    _confirmPasswordController.dispose();
     super.dispose();
   }
 
@@ -437,6 +437,9 @@ class _AccountFullScreenState extends State<AccountFullScreen> {
     final userProvider = Provider.of<UserProvider>(context);
     final shortId = userProvider.currentUser?.shortId ?? 'N/A';
 
+    // VARIABEL BARU
+    final bool isGoogleAccount = userProvider.isGoogleUser;
+
     return Scaffold(
       backgroundColor: const Color(0xFF640A0A),
       appBar: AppBar(
@@ -452,7 +455,7 @@ class _AccountFullScreenState extends State<AccountFullScreen> {
           children: [
             const SizedBox(height: 50),
 
-            // Kode Unik
+            // 1. KODE UNIK (SELALU DITAMPILKAN)
             const Text('Your Unique ID', style: TextStyle(color: Colors.white70, fontSize: 16)),
             const SizedBox(height: 8),
             GestureDetector(
@@ -472,40 +475,54 @@ class _AccountFullScreenState extends State<AccountFullScreen> {
                 ),
               ),
             ),
-            const SizedBox(height: 40),
 
+            // ===================================================
+            // LOGIKA KONDISIONAL: HANYA TAMPILKAN JIKA BUKAN GOOGLE USER
+            // ===================================================
+            if (!isGoogleAccount) ...[
+              const SizedBox(height: 40),
 
-            // Old Password
-            const Text('Old Password', style: TextStyle(color: Colors.white70, fontSize: 16)),
-            const SizedBox(height: 8),
-            TextField(controller: _oldPasswordController, obscureText: true, style: const TextStyle(color: Colors.white), decoration: _inputDecoration('********')),
-            const SizedBox(height: 25),
+              // Old Password
+              const Text('Old Password', style: TextStyle(color: Colors.white70, fontSize: 16)),
+              const SizedBox(height: 8),
+              TextField(controller: _oldPasswordController, obscureText: true, style: const TextStyle(color: Colors.white), decoration: _inputDecoration('********')),
+              const SizedBox(height: 25),
 
-            // New Password
-            const Text('New Password', style: TextStyle(color: Colors.white70, fontSize: 16)),
-            const SizedBox(height: 8),
-            TextField(controller: _newPasswordController, obscureText: true, style: const TextStyle(color: Colors.white), decoration: _inputDecoration('********')),
-            const SizedBox(height: 25),
+              // New Password
+              const Text('New Password', style: TextStyle(color: Colors.white70, fontSize: 16)),
+              const SizedBox(height: 8),
+              TextField(controller: _newPasswordController, obscureText: true, style: const TextStyle(color: Colors.white), decoration: _inputDecoration('********')),
+              const SizedBox(height: 25),
 
-            // Confirm New Password (BARU)
-            const Text('Confirm New Password', style: TextStyle(color: Colors.white70, fontSize: 16)),
-            const SizedBox(height: 8),
-            TextField(controller: _confirmPasswordController, obscureText: true, style: const TextStyle(color: Colors.white), decoration: _inputDecoration('********')),
+              // Confirm New Password
+              const Text('Confirm New Password', style: TextStyle(color: Colors.white70, fontSize: 16)),
+              const SizedBox(height: 8),
+              TextField(controller: _confirmPasswordController, obscureText: true, style: const TextStyle(color: Colors.white), decoration: _inputDecoration('********')),
 
-            const SizedBox(height: 30),
+              const SizedBox(height: 30),
 
-            // Error Message
-            if (_errorMessage != null)
-              Padding(
-                padding: const EdgeInsets.only(bottom: 15.0),
-                child: Text(_errorMessage!, style: const TextStyle(color: Colors.yellowAccent)),
+              // Error Message
+              if (_errorMessage != null)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 15.0),
+                  child: Text(_errorMessage!, style: const TextStyle(color: Colors.yellowAccent)),
+                ),
+
+              // Save Password Button
+              _isLoading
+                  ? const Center(child: CircularProgressIndicator(color: Colors.white))
+                  : CustomButton(text: 'Change Password', onPressed: _changePassword, backgroundColor: Colors.black, textColor: Colors.white),
+              const SizedBox(height: 40),
+            ] else ...[
+              // Pesan khusus untuk pengguna Google
+              const SizedBox(height: 40),
+              const Text(
+                'Anda login menggunakan Google. Untuk alasan keamanan, silakan ubah kata sandi Anda langsung melalui Pengaturan Akun Google.',
+                style: TextStyle(color: Colors.white70, fontSize: 16, fontStyle: FontStyle.italic),
               ),
-
-            // Save Password Button
-            _isLoading
-                ? const Center(child: CircularProgressIndicator(color: Colors.white))
-                : CustomButton(text: 'Change Password', onPressed: _changePassword, backgroundColor: Colors.black, textColor: Colors.white),
-            const SizedBox(height: 40),
+              const SizedBox(height: 40),
+            ],
+            // ===================================================
 
           ],
         ),
@@ -515,7 +532,7 @@ class _AccountFullScreenState extends State<AccountFullScreen> {
 }
 
 // =======================================================
-// D. UPDATES FULL SCREEN (Tetap Sama)
+// D. UPDATES FULL SCREEN
 // =======================================================
 
 class UpdatesFullScreen extends StatefulWidget {

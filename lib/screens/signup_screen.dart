@@ -187,7 +187,7 @@ class _SignupScreenState extends State<SignupScreen> {
 
                       // Tombol Google
                       CustomButton(
-                        text: 'Sign Up dengan Google',
+                        text: 'Sign Up with Google',
                         onPressed: _signUpWithGoogle,
                         backgroundColor: Colors.blueGrey.withOpacity(0.9),
                         textColor: Colors.white,

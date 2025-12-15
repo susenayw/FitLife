@@ -178,7 +178,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             Navigator.pushNamed(context, AppRoutes.forgotPassword); // NAVIGASI BARU
                           },
                           child: const Text(
-                            'Lupa Kata Sandi?',
+                            'Forgot Password?',
                             style: TextStyle(color: Colors.white70, fontSize: 16),
                           ),
                         ),
@@ -201,7 +201,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
                       // Tombol Google
                       CustomButton(
-                        text: 'Login dengan Google',
+                        text: 'Login with Google',
                         onPressed: _signInWithGoogle, // PANGGIL GOOGLE LOGIN
                         backgroundColor: Colors.blueGrey.withOpacity(0.9),
                         textColor: Colors.white,
