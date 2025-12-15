@@ -14,6 +14,14 @@
       },
       "oauth_client": [
         {
+          "client_id": "152698817266-26gg7r4akm698h3vo2egspb2r6nnia5n.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.fitlifeapp",
+            "certificate_hash": "babc1d2ad859439ac9d16fc287bc8ac15c60179c"
+          }
+        },
+        {
           "client_id": "152698817266-d0qaart6pkvaf97i3o2r1cgpfdhe8gs0.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {
