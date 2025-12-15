@@ -1,8 +1,9 @@
-// lib/providers/user_provider.dart (KODE LENGKAP & TERKINI)
+// lib/providers/user_provider.dart (KODE LENGKAP & TERKINI - DILENGKAPI CHANGE PASSWORD)
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'dart:math';
+import 'package:google_sign_in/google_sign_in.dart';
 import '../models/user_data.dart';
 import '../models/workout_set.dart';
 
@@ -12,6 +13,10 @@ class UserProvider with ChangeNotifier {
   // FIREBASE INSTANCES
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final GoogleSignIn _googleSignIn = GoogleSignIn();
+
+  // TAMBAHKAN VARIABEL UNTUK MELACAK TANGGAL TERAKHIR AKTIVITAS
+  DateTime? _lastActivityDate;
 
   // GETTERS
   UserData? get currentUser => _currentUser;
@@ -36,9 +41,17 @@ class UserProvider with ChangeNotifier {
     notifyListeners();
   }
 
-  void deductCaloriesBurned(int caloriesBurned) {
+  // CATATAN: Fungsi ini sekarang akan memperbarui _lastActivityDate
+  void deductCaloriesBurned(int caloriesBurned) async {
     _netDailyCalorieGoal -= caloriesBurned;
-    _saveNetDailyCalorieGoal();
+
+    // Perbarui tanggal aktivitas terakhir saat kalori dikurangi (penting untuk reset)
+    _lastActivityDate = DateTime.now();
+
+    await _saveNetDailyCalorieGoal();
+    // Simpan data user (termasuk lastActivityDate yang baru)
+    await _saveUserDataToFirestore(_currentUser!);
+
     notifyListeners();
   }
 
@@ -81,6 +94,9 @@ class UserProvider with ChangeNotifier {
       );
       _currentUser = newUser;
 
+      // INISIALISASI TANGGAL AKTIVITAS AWAL
+      _lastActivityDate = DateTime.now();
+
       await _saveUserDataToFirestore(newUser);
       await _saveNetDailyCalorieGoal();
 
@@ -112,12 +128,155 @@ class UserProvider with ChangeNotifier {
     }
   }
 
+  // FUNGSI BARU: GOOGLE SIGN IN
+  Future<String?> signInWithGoogle() async {
+    try {
+      final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
+
+      if (googleUser == null) {
+        return 'Sign-in dibatalkan oleh pengguna.';
+      }
+
+      final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
+
+      final AuthCredential credential = GoogleAuthProvider.credential(
+        accessToken: googleAuth.accessToken,
+        idToken: googleAuth.idToken,
+      );
+
+      final UserCredential userCredential = await _auth.signInWithCredential(credential);
+      final User? firebaseUser = userCredential.user;
+
+      if (firebaseUser != null) {
+        final uid = firebaseUser.uid;
+        final doc = await _firestore.collection('users').doc(uid).get();
+
+        if (!doc.exists) {
+          // PENGGUNA BARU: Buat dokumen pengguna baru di Firestore
+          String shortId = _generateShortId(uid);
+
+          UserData newUser = UserData(
+            userId: uid,
+            email: firebaseUser.email ?? '',
+            username: firebaseUser.displayName ?? 'Google User',
+            dateOfBirth: DateTime(2000, 1, 1),
+            shortId: shortId,
+            friends: [],
+          );
+
+          _currentUser = newUser;
+          // INISIALISASI TANGGAL AKTIVITAS AWAL
+          _lastActivityDate = DateTime.now();
+
+          await _saveUserDataToFirestore(newUser);
+          await _saveNetDailyCalorieGoal();
+
+          notifyListeners();
+          return 'NEW_USER'; // MENGEMBALIKAN FLAG PENGGUNA BARU
+
+        } else {
+          // PENGGUNA LAMA: Ambil data dari Firestore
+          await fetchUserDataFromFirestore(uid);
+          notifyListeners();
+          return null; // Sukses, bukan user baru
+        }
+      }
+      return 'Autentikasi Firebase gagal.';
+
+    } on FirebaseAuthException catch (e) {
+      return e.message;
+    } catch (e) {
+      return e.toString();
+    }
+  }
+
+  // FUNGSI BARU: RESET PASSWORD VIA EMAIL
+  Future<String?> resetPassword(String email) async {
+    try {
+      await _auth.sendPasswordResetEmail(email: email);
+      return null;
+    } on FirebaseAuthException catch (e) {
+      if (e.code == 'user-not-found') {
+        return 'Akun dengan email ini tidak ditemukan.';
+      }
+      return e.message;
+    } catch (e) {
+      return e.toString();
+    }
+  }
+
+  // =======================================================
+  // FUNGSI CHANGE PASSWORD (DIBUTUHKAN DI SETTINGS SCREEN)
+  // =======================================================
+
+  // FUNGSI BARU: 1. RE-AUTHENTICATE USER (Memverifikasi Password Lama)
+  // Diperlukan jika sesi login sudah lama atau untuk alasan keamanan.
+  Future<String?> reauthenticateUser({required String email, required String oldPassword}) async {
+    final user = _auth.currentUser;
+    if (user == null) {
+      return 'Pengguna tidak ditemukan. Silakan login ulang.';
+    }
+
+    // TIDAK DAPAT MENGGANTI PASSWORD JIKA LOGIN VIA PROVIDER LAIN (misalnya Google)
+    if (user.providerData.any((info) => info.providerId != 'password')) {
+      return 'Akun ini terdaftar menggunakan Google. Password harus diubah melalui akun Google Anda.';
+    }
+
+    try {
+      // Buat kredensial menggunakan email dan password lama
+      final credential = EmailAuthProvider.credential(email: email, password: oldPassword);
+
+      // Lakukan re-authentication
+      await user.reauthenticateWithCredential(credential);
+
+      return null; // Sukses re-authentication
+
+    } on FirebaseAuthException catch (e) {
+      if (e.code == 'wrong-password' || e.code == 'invalid-credential') {
+        return 'Password lama salah. Verifikasi gagal.';
+      }
+      return e.message;
+
+    } catch (e) {
+      return e.toString();
+    }
+  }
+
+
+  // FUNGSI BARU: 2. CHANGE PASSWORD (Mengubah Password Baru)
+  Future<String?> changePassword({required String newPassword}) async {
+    final user = _auth.currentUser;
+    if (user == null) {
+      return 'Pengguna tidak ditemukan. Gagal mengubah password.';
+    }
+
+    try {
+      // Ubah password
+      await user.updatePassword(newPassword);
+
+      return null; // Sukses mengubah password
+
+    } on FirebaseAuthException catch (e) {
+      if (e.code == 'weak-password') {
+        return 'Password terlalu lemah. Harus setidaknya 6 karakter.';
+      }
+      // 'requires-recent-login' seharusnya ditangani oleh reauthenticateUser
+      return e.message;
+    } catch (e) {
+      return e.toString();
+    }
+  }
+
+  // =======================================================
+
   Future<void> logout() async {
+    await _googleSignIn.signOut(); // Tambahkan sign out dari Google
     await _auth.signOut();
     _currentUser = null;
     _myPlan.clear();
     _recentActivity.clear();
     _netDailyCalorieGoal = 0;
+    _lastActivityDate = null; // Reset tanggal
     notifyListeners();
   }
 
@@ -127,10 +286,51 @@ class UserProvider with ChangeNotifier {
 
     if (doc.exists && doc.data() != null) {
       final data = doc.data()!;
-      _currentUser = _userDataFromMap(data);
+      _currentUser = _userDataFromMap(data); // Memuat _lastActivityDate di sini
 
       // Memuat nilai kalori dari Firestore
       _netDailyCalorieGoal = (data['netDailyCalorieGoal'] as num?)?.toInt() ?? 0;
+
+      // =======================================================
+      // LOGIKA RESET HARIAN
+      // =======================================================
+      final now = DateTime.now();
+      bool shouldReset = false;
+
+      if (_lastActivityDate != null) {
+        // Bandingkan hanya tanggal (Tahun, Bulan, Hari)
+        final lastDate = DateTime(_lastActivityDate!.year, _lastActivityDate!.month, _lastActivityDate!.day);
+        final today = DateTime(now.year, now.month, now.day);
+
+        // Jika tanggal terakhir aktivitas BUKAN hari ini, reset
+        if (lastDate.isBefore(today)) {
+          shouldReset = true;
+        }
+      }
+
+      if (shouldReset) {
+        print('DAILY RESET TRIGGERED: Mereset kalori dan aktivitas.');
+
+        // 1. Reset Net Daily Calorie Goal (ke 0, menghapus akumulasi kalori terbakar)
+        _netDailyCalorieGoal = 0;
+
+        // 2. Reset Recent Activity (asumsi riwayat harian)
+        _recentActivity.clear();
+
+        // 3. Update Tanggal Aktivitas
+        _lastActivityDate = now;
+
+        // 4. Simpan pembaruan reset ke Firestore
+        await _saveNetDailyCalorieGoal();
+        await _firestore.collection('users').doc(uid).update({
+          'lastActivityDate': _lastActivityDate!.toIso8601String()
+        });
+      } else if (_lastActivityDate == null) {
+        // Jika belum ada tanggal (kasus pengguna lama sebelum fitur ini), set tanggal hari ini.
+        _lastActivityDate = now;
+        await _firestore.collection('users').doc(uid).update({'lastActivityDate': _lastActivityDate!.toIso8601String()});
+      }
+      // =======================================================
 
       // Cek dan Generate ShortID jika belum ada (untuk akun lama)
       if (_currentUser?.shortId == null) {
@@ -140,13 +340,15 @@ class UserProvider with ChangeNotifier {
       }
 
     } else {
+      // Jika dokumen tidak ada (kasus Sign Up baru)
       _currentUser = UserData(
         userId: uid,
         email: _auth.currentUser?.email ?? 'default@example.com',
         dateOfBirth: DateTime(2000, 1, 1),
       );
+      _lastActivityDate = DateTime.now(); // SET TANGGAL AWAL UNTUK USER BARU
       await _saveUserDataToFirestore(_currentUser!);
-      await _saveNetDailyCalorieGoal(); // Perbaikan typo
+      await _saveNetDailyCalorieGoal();
     }
 
     // Muat data plan/activity setelah data user dimuat
@@ -168,6 +370,8 @@ class UserProvider with ChangeNotifier {
       'profilePicturePath': data.profilePicturePath,
       'shortId': data.shortId,
       'friends': data.friends, // Tambahkan daftar teman
+      // TAMBAHKAN: Tanggal terakhir aktivitas
+      'lastActivityDate': _lastActivityDate?.toIso8601String(),
     };
   }
 
@@ -177,6 +381,14 @@ class UserProvider with ChangeNotifier {
     if (map['friends'] is List) {
       friendsList = List<String>.from(map['friends']);
     }
+
+    // AMBIL TANGGAL TERAKHIR AKTIVITAS DARI MAP
+    if (map.containsKey('lastActivityDate') && map['lastActivityDate'] != null) {
+      _lastActivityDate = DateTime.tryParse(map['lastActivityDate'] ?? '');
+    } else {
+      _lastActivityDate = null;
+    }
+
 
     return UserData(
       userId: map['userId'] ?? '',
@@ -195,6 +407,7 @@ class UserProvider with ChangeNotifier {
 
   Future<void> _saveUserDataToFirestore(UserData data) async {
     if (data.userId == null || data.userId!.isEmpty) return;
+    // Menggunakan _userDataToMap di sini akan menyimpan lastActivityDate yang baru
     await _firestore.collection('users').doc(data.userId).set(_userDataToMap(data), SetOptions(merge: true));
   }
 
@@ -258,12 +471,16 @@ class UserProvider with ChangeNotifier {
     // PENTING: Asumsikan WorkoutSet.fromMap dan toList tersedia
     _myPlan = planSnapshot.docs.map((doc) => WorkoutSet.fromMap(doc.id, doc.data())).toList();
 
-    final activitySnapshot = await userRef
-        .collection('activity')
-        .orderBy('timestamp', descending: true)
-        .get();
+    // Jika terjadi reset, kita tidak perlu memuat aktivitas lama.
+    // Tapi jika tidak direset, muat aktivitas seperti biasa.
+    if (_recentActivity.isEmpty) { // Hanya muat jika cache lokal kosong (setelah login/reboot/reset)
+      final activitySnapshot = await userRef
+          .collection('activity')
+          .orderBy('timestamp', descending: true)
+          .get();
 
-    _recentActivity = activitySnapshot.docs.map((doc) => WorkoutSet.fromMap(doc.id, doc.data())).toList();
+      _recentActivity = activitySnapshot.docs.map((doc) => WorkoutSet.fromMap(doc.id, doc.data())).toList();
+    }
 
     notifyListeners();
   }
@@ -318,6 +535,7 @@ class UserProvider with ChangeNotifier {
       completedWorkout.caloriesBurned = completedWorkout.sets * 15;
     }
 
+    // Fungsi ini sekarang memperbarui _lastActivityDate dan menyimpan user data
     deductCaloriesBurned(completedWorkout.caloriesBurned);
 
     await _firestore.collection('users').doc(uid).collection('plan').doc(completedWorkout.id).delete();

@@ -1,4 +1,4 @@
-// lib/screens/settings_screen.dart (KODE LENGKAP - Tombol Logout Pindah ke Luar Submenu)
+// lib/screens/settings_screen.dart (KODE LENGKAP - DENGAN FUNGSI CHANGE PASSWORD NYATA)
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -310,7 +310,7 @@ class _EditProfileFullScreenState extends State<EditProfileFullScreen> {
 }
 
 // =======================================================
-// C. ACCOUNT FULL SCREEN (Tombol Logout DIHILANGKAN)
+// C. ACCOUNT FULL SCREEN (IMPLEMENTASI CHANGE PASSWORD NYATA)
 // =======================================================
 
 class AccountFullScreen extends StatefulWidget {
@@ -323,25 +323,83 @@ class AccountFullScreen extends StatefulWidget {
 class _AccountFullScreenState extends State<AccountFullScreen> {
   final TextEditingController _oldPasswordController = TextEditingController();
   final TextEditingController _newPasswordController = TextEditingController();
+  final TextEditingController _confirmPasswordController = TextEditingController(); // TAMBAH: Konfirmasi Password
 
-  // --- FUNGSI LOGOUT DIHAPUS DARI SINI ---
+  bool _isLoading = false;
+  String? _errorMessage;
 
-  void _savePassword() {
-    if (_oldPasswordController.text.isEmpty || _newPasswordController.text.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please fill in both password fields.')),
-      );
+  // --- FUNGSI BARU: MENGUBAH PASSWORD SECARA NYATA ---
+  void _changePassword() async {
+    final userProvider = Provider.of<UserProvider>(context, listen: false);
+    final email = userProvider.currentUser?.email;
+
+    final oldPassword = _oldPasswordController.text;
+    final newPassword = _newPasswordController.text;
+    final confirmPassword = _confirmPasswordController.text;
+
+    // 1. Validasi Input
+    if (email == null) {
+      setState(() => _errorMessage = 'Sesi pengguna tidak valid.');
+      return;
+    }
+    if (oldPassword.isEmpty || newPassword.isEmpty || confirmPassword.isEmpty) {
+      setState(() => _errorMessage = 'Semua kolom password harus diisi.');
+      return;
+    }
+    if (newPassword != confirmPassword) {
+      setState(() => _errorMessage = 'Password Baru dan Konfirmasi tidak cocok.');
+      return;
+    }
+    if (newPassword.length < 6) {
+      setState(() => _errorMessage = 'Password baru harus minimal 6 karakter.');
       return;
     }
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Password changed successfully! (Mock)')),
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
+
+    // ===================================
+    // LANGKAH 1: RE-AUTHENTICATE (Verifikasi Password Lama)
+    // ===================================
+    final reauthError = await userProvider.reauthenticateUser(
+      email: email,
+      oldPassword: oldPassword,
     );
 
-    _oldPasswordController.clear();
-    _newPasswordController.clear();
+    if (reauthError != null) {
+      setState(() {
+        _errorMessage = reauthError;
+        _isLoading = false;
+      });
+      return;
+    }
 
-    Navigator.pop(context);
+    // ===================================
+    // LANGKAH 2: GANTI PASSWORD BARU
+    // ===================================
+    final changeError = await userProvider.changePassword(
+      newPassword: newPassword,
+    );
+
+    if (changeError != null) {
+      setState(() {
+        _errorMessage = changeError;
+        _isLoading = false;
+      });
+      return;
+    }
+
+    // SUKSES
+    setState(() => _isLoading = false);
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Password berhasil diubah! Silakan login ulang.')),
+    );
+
+    // Opsional: Paksa Logout dan arahkan ke Login
+    await userProvider.logout();
+    Navigator.of(context).pushNamedAndRemoveUntil(AppRoutes.login, (route) => false);
   }
 
   // FUNGSI COPY SHORT ID
@@ -356,6 +414,7 @@ class _AccountFullScreenState extends State<AccountFullScreen> {
   void dispose() {
     _oldPasswordController.dispose();
     _newPasswordController.dispose();
+    _confirmPasswordController.dispose(); // DISPOSE CONFIRM PASSWORD
     super.dispose();
   }
 
@@ -426,13 +485,27 @@ class _AccountFullScreenState extends State<AccountFullScreen> {
             const Text('New Password', style: TextStyle(color: Colors.white70, fontSize: 16)),
             const SizedBox(height: 8),
             TextField(controller: _newPasswordController, obscureText: true, style: const TextStyle(color: Colors.white), decoration: _inputDecoration('********')),
-            const SizedBox(height: 40),
+            const SizedBox(height: 25),
+
+            // Confirm New Password (BARU)
+            const Text('Confirm New Password', style: TextStyle(color: Colors.white70, fontSize: 16)),
+            const SizedBox(height: 8),
+            TextField(controller: _confirmPasswordController, obscureText: true, style: const TextStyle(color: Colors.white), decoration: _inputDecoration('********')),
+
+            const SizedBox(height: 30),
+
+            // Error Message
+            if (_errorMessage != null)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 15.0),
+                child: Text(_errorMessage!, style: const TextStyle(color: Colors.yellowAccent)),
+              ),
 
             // Save Password Button
-            CustomButton(text: 'Change Password', onPressed: _savePassword, backgroundColor: Colors.black, textColor: Colors.white),
+            _isLoading
+                ? const Center(child: CircularProgressIndicator(color: Colors.white))
+                : CustomButton(text: 'Change Password', onPressed: _changePassword, backgroundColor: Colors.black, textColor: Colors.white),
             const SizedBox(height: 40),
-
-            // Tombol Logout dihapus dari sini
 
           ],
         ),

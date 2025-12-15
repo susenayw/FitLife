@@ -1,4 +1,4 @@
-// lib/routes/app_routes.dart (KODE LENGKAP)
+// lib/routes/app_routes.dart (KODE LENGKAP - DIPERBARUI)
 
 import 'package:flutter/material.dart';
 
@@ -15,6 +15,8 @@ import '../screens/unified_activity_screen.dart';
 import '../screens/settings_screen.dart';
 import '../screens/free_run_screen.dart';
 import '../screens/social_screen.dart';
+// Import baru untuk Forgot Password
+import '../screens/forgot_password_screen.dart';
 
 // Rute bernama yang akan digunakan
 class AppRoutes {
@@ -25,6 +27,7 @@ class AppRoutes {
   static const String completeProfile = '/complete-profile';
   static const String confirmation = '/confirmation';
   static const String mainScreen = '/main';
+  static const String forgotPassword = '/forgot-password'; // Rute baru
 
   // Rute Khusus
   static const String unifiedActivity = '/activity';
@@ -43,6 +46,9 @@ final Map<String, WidgetBuilder> routes = {
   AppRoutes.completeProfile: (context) => const CompleteProfileScreen(),
   AppRoutes.confirmation: (context) => const ConfirmationScreen(),
   AppRoutes.mainScreen: (context) => const MainScreen(),
+
+  // Rute baru
+  AppRoutes.forgotPassword: (context) => const ForgotPasswordScreen(),
 
   // Rute Khusus
   AppRoutes.unifiedActivity: (context) => const UnifiedActivityScreen(),

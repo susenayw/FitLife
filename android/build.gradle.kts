@@ -1,3 +1,23 @@
+// android/build.gradle.kts (KODE LENGKAP & TERKOREKSI)
+
+buildscript {
+
+    // Konfigurasi repository untuk menemukan plugin
+    repositories {
+        google()
+        mavenCentral()
+    }
+
+    dependencies {
+        // Classpath untuk Android Gradle Plugin
+        classpath("com.android.tools.build:gradle:8.1.4") // Sesuaikan versi jika berbeda
+
+        // WAJIB ADA: Classpath untuk plugin Google Services
+        classpath("com.google.gms:google-services:4.4.1") // Versi terbaru saat ini
+    }
+}
+
+
 allprojects {
     repositories {
         google()
