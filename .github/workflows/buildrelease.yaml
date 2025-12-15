@@ -36,7 +36,7 @@ jobs:
         run: yes | sdkmanager --licenses || true
 
       - name: Install NDK
-        run: sdkmanager --install "ndk;29.0.1311345"
+        run: sdkmanager --install "ndk;29.0.13113456"
 
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
